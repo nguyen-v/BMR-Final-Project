@@ -19,7 +19,7 @@ from img_utils import *
 # ========================================================================== #
 
 dirname = os.path.dirname(__file__)
-img_path = os.path.join(dirname, '../img/map_test4.png')
+img_path = os.path.join(dirname, '../img/map_test_noisy.png')
 
 ## Set to true for testing this module.
 CREATE_MAP_TEST = True
@@ -206,7 +206,7 @@ if CREATE_MAP_TEST:
     plt.title("Raw image")
 
     # Initialize map
-    M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 7, 11, verbose = True)
+    M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 11, 7, verbose = True)
     if success:
         plt.figure()
         plt.imshow(map_enlarged, origin = 'lower')
