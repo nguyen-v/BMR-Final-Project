@@ -47,8 +47,8 @@ WHITE = 255
 BLACK = 0
 
 ## Defines how close to the 4 corners of a cell to look when checking for
-#  the presence of an obstacle (px).
-CORNER_EPSILON = 10
+#  the presence of an obstacle (1 = check right up to the edge, 0 = check center).
+CHECK_CORNER_COEFF = 0.8
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -76,7 +76,7 @@ def create_map(img, map_width, map_height, verbose = False):
 
     map = np.ones((map_height, map_width))*WHITE
     size_cell_px = rect_width/map_width
-    d = int(size_cell_px/2 - CORNER_EPSILON)
+    d = int(size_cell_px/2*CHECK_CORNER_COEFF)
 
     for row in range(0, map_height):
         for col in range(0, map_width):
