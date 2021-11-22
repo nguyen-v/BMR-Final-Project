@@ -17,7 +17,7 @@ import os
 # ========================================================================== #
 
 dirname = os.path.dirname(__file__)
-img_path = os.path.join(dirname, '../img/map_test.png')
+img_path = os.path.join(dirname, '../img/map_test2.png')
 
 ## Set to true for testing this module.
 CREATE_MAP_TEST = True
@@ -29,10 +29,10 @@ RED_THR_HSV_LOW = (0, 110, 110)
 RED_THR_HSV_HIGH = (15, 255,255)
 
 ## Raw image width in pixels.
-RAW_IMG_WIDTH = 1280
+RAW_IMG_WIDTH = 800
 
 ## Raw image height in pixels.
-RAW_IMG_HEIGHT = 720
+RAW_IMG_HEIGHT = 600
 
 ## Binary image conversion low threshold.
 BIN_THR_LOW = 128
@@ -153,13 +153,12 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
         print("Bottom left {}".format(bot_left))
         print("Bottom right {}".format(bot_right))
 
-
     rect_width = 0 
     rect_height = 0
     # We want to have the final image bounded by the initial image dimensions
     if (map_width/map_height > RAW_IMG_WIDTH/RAW_IMG_HEIGHT):
         rect_width = RAW_IMG_WIDTH
-        rect_height = int(RAW_IMG_WIDTH, map_height*RAW_IMG_WIDTH/map_width)
+        rect_height = int(map_height*RAW_IMG_WIDTH/map_width)
     elif (map_width/map_height <= RAW_IMG_WIDTH/RAW_IMG_HEIGHT):
         rect_width = int(map_width*RAW_IMG_HEIGHT/map_height)
         rect_height = RAW_IMG_HEIGHT
@@ -197,8 +196,8 @@ def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH):
     # erode mask to avoid noise
     kernel = np.ones((2,2),np.uint8)
     mask = cv2.erode(mask,kernel,iterations = 3)
-    cv2.imshow("Mask", mask)
-    cv2.waitKey(0)
+    # plt.figure()
+    # plt.imshow(mask)
     # extract contours of dots
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -228,21 +227,27 @@ def cell_to_xy(cell, map_width, map_height, rect_width, rect_height):
 if CREATE_MAP_TEST:
     # read image
     img = cv2.imread(img_path)
+    plt.figure()
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title("Raw image")
 
     # Initialize map
     M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 11, 7, verbose = True)
     if success:
         plt.figure()
         plt.imshow(map_enlarged, origin = 'lower')
+        plt.title("Map enlarged")
         plt.figure()
         plt.imshow(map, origin = 'lower')
+        plt.title("Original Map")
         plt.gca().invert_yaxis()
         # We can now get the rectified image using the warp transform matrix
         # Separating the processes allow us to recalculate quickly the rectified map
         # without having to recalculate the warp transform matrix (assuming fixed camera).
         img_rect = get_rectified_img(img, M, rect_width, rect_height)
-        # cv2.imshow("Mask", img_rect)
-        # cv2.waitKey(0)
+        plt.figure()
+        plt.imshow(cv2.cvtColor(img_rect, cv2.COLOR_BGR2RGB))
+        plt.title("Rectified image")
         plt.show()
     else:
         print("Map was not successfully computed.")
