@@ -237,6 +237,7 @@ if CREATE_MAP_TEST:
         plt.figure()
         plt.imshow(map_enlarged, origin = 'lower')
         plt.title("Map enlarged")
+        plt.gca().invert_yaxis()
         plt.figure()
         plt.imshow(map, origin = 'lower')
         plt.title("Original Map")
