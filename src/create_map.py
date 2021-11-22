@@ -12,12 +12,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from img_utils import *
+
 # ========================================================================== #
 #  Global constants.                                                         # 
 # ========================================================================== #
 
 dirname = os.path.dirname(__file__)
-img_path = os.path.join(dirname, '../img/map_test2.png')
+img_path = os.path.join(dirname, '../img/map_test4.png')
 
 ## Set to true for testing this module.
 CREATE_MAP_TEST = True
@@ -33,6 +35,9 @@ RAW_IMG_WIDTH = 800
 
 ## Raw image height in pixels.
 RAW_IMG_HEIGHT = 600
+
+## Number of corners for the map boundary
+NUM_MAP_CORNERS = 4
 
 ## Binary image conversion low threshold.
 BIN_THR_LOW = 128
@@ -111,14 +116,13 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
     if verbose:
         print("Image dimensions are {} x {}".format(width, height))
 
-    map_corners = get_color_dots(img, RED_THR_HSV_LOW, RED_THR_HSV_HIGH)
-    if len(map_corners) != 4:
-        return [], 0, 0, False
-
+    map_corners, found_pts = get_color_dots(img, RED_THR_HSV_LOW, RED_THR_HSV_HIGH, NUM_MAP_CORNERS)     
+    if found_pts == False:
+        return [], 0, 0, found_pts
     img_center = [0, 0]
     for corner in map_corners:
-        img_center[0] = img_center[0] + corner[0]/4
-        img_center[1] = img_center[1] + corner[1]/4
+        img_center[0] = img_center[0] + corner[0]/NUM_MAP_CORNERS
+        img_center[1] = img_center[1] + corner[1]/NUM_MAP_CORNERS
 
     # Sort corners: southmost to northmost
     map_corners = sorted(map_corners, key=lambda x: x[1], reverse=True)
@@ -181,36 +185,6 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
 def get_rectified_img(img, M, rect_width, rect_height):
     return cv2.warpPerspective(img, M, (rect_width, rect_height),flags=cv2.INTER_LINEAR)
 
-
-## Returns a list of (x, y) positions of dots that satisfy the low 
-#  high HSV thresholds
-#  @param img           Raw BGR image from camera.
-#  @param HSV_THR_LOW   Low threshold in HSV space.
-#  @param HSV_THR_HIGH  High threshold in HSV space.
-#  @return dots         A list of (x, y) positions of dots.    
-def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH):
-    # convert to hsv space
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    # extract a certain color
-    mask = cv2.inRange(hsv, HSV_THR_LOW, HSV_THR_HIGH)
-    # erode mask to avoid noise
-    kernel = np.ones((2,2),np.uint8)
-    mask = cv2.erode(mask,kernel,iterations = 3)
-    # plt.figure()
-    # plt.imshow(mask)
-    # extract contours of dots
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    dots = []
-    # find centroid of dots
-    for c in contours:
-        # calculate moments for each contour
-        M = cv2.moments(c)
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        dots.append((cX, cY))
-    return dots
-
 ## Returns (x, y) positions from cell (row, col) postitions
 #  @param cell          Cell position (row, col)
 #  @param map_width     Width in number of cells of the input map.
@@ -232,7 +206,7 @@ if CREATE_MAP_TEST:
     plt.title("Raw image")
 
     # Initialize map
-    M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 11, 7, verbose = True)
+    M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 7, 11, verbose = True)
     if success:
         plt.figure()
         plt.imshow(map_enlarged, origin = 'lower')
