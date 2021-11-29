@@ -8,21 +8,12 @@
 # ========================================================================== #
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-import os
-
 from img_utils import *
 
 # ========================================================================== #
 #  Global constants.                                                         # 
 # ========================================================================== #
-
-dirname = os.path.dirname(__file__)
-img_path = os.path.join(dirname, '../img/map_test_noisy.png')
-
-## Set to true for testing this module.
-CREATE_MAP_TEST = True
 
 ## Low threshold for red in HSV color space.
 RED_THR_HSV_LOW = (0, 110, 110)
@@ -193,36 +184,3 @@ def get_rectified_img(img, M, rect_width, rect_height):
 #  @return (x, y)       X-Y tuple coordinates of corresponding cell.
 def cell_to_xy(cell, map_width, map_height, rect_width, rect_height):
     return (int((rect_width/map_width)*(cell[1]+1/2)), int((rect_height/map_height)*(cell[0]+1/2)))
-
-# ========================================================================== #
-#  Testbenches                                                               # 
-# ========================================================================== #
-
-if CREATE_MAP_TEST:
-    # read image
-    img = cv2.imread(img_path)
-    plt.figure()
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    plt.title("Raw image")
-
-    # Initialize map
-    M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 11, 7, verbose = True)
-    if success:
-        plt.figure()
-        plt.imshow(map_enlarged, origin = 'lower')
-        plt.title("Map enlarged")
-        plt.gca().invert_yaxis()
-        plt.figure()
-        plt.imshow(map, origin = 'lower')
-        plt.title("Original Map")
-        plt.gca().invert_yaxis()
-        # We can now get the rectified image using the warp transform matrix
-        # Separating the processes allow us to recalculate quickly the rectified map
-        # without having to recalculate the warp transform matrix (assuming fixed camera).
-        img_rect = get_rectified_img(img, M, rect_width, rect_height)
-        plt.figure()
-        plt.imshow(cv2.cvtColor(img_rect, cv2.COLOR_BGR2RGB))
-        plt.title("Rectified image")
-        plt.show()
-    else:
-        print("Map was not successfully computed.")

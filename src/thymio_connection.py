@@ -59,10 +59,11 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
             print("Connecting to Thymio. Try {}/{}...".format(error_cnt, num_err))
         thymio_port = get_thymio_port()
         if len(thymio_port) != 0:
+            # If multiple Thymios are connected, just connect to the first one on the list.
+            th = Thymio.serial(port = thymio_port[0], refreshing_rate = DEF_REFR_RATE) 
             if verbose:
                 print("Successfully connected to thymio on {}.".format(thymio_port[0]))
-            # If multiple Thymios are connected, just connect to the first one on the list.
-            return Thymio.serial(port = thymio_port[0], refreshing_rate = DEF_REFR_RATE) 
+            return th
         else:
             error_cnt = error_cnt + 1
             time.sleep(DELTA_T_ERR)
