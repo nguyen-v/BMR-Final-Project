@@ -1,7 +1,7 @@
 ## 
 # @file thymio_connection.py
 #
-# @brief Definition of functions to connect to thymio.
+# @brief Definition of functions to connect to Thymio.
 
 # ========================================================================== #
 #  Imports.                                                                  # 
@@ -56,7 +56,7 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
     error_cnt = 1
     while error_cnt <= num_err:
         if verbose:
-            print("Connecting to thymio. Try {}/{}...".format(error_cnt, num_err))
+            print("Connecting to Thymio. Try {}/{}...".format(error_cnt, num_err))
         thymio_port = get_thymio_port()
         if len(thymio_port) != 0:
             if verbose:
@@ -67,5 +67,5 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
             error_cnt = error_cnt + 1
             time.sleep(DELTA_T_ERR)
     if verbose:
-        print("Connection to thymio unsucessful.")
+        print("Connection to Thymio unsucessful.")
     return None
