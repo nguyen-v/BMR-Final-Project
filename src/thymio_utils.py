@@ -8,8 +8,6 @@
 # ========================================================================== #
 
 import time
-# import math
-from thymio_connection import connect_to_thymio
 
 # ========================================================================== #
 #  Global constants.                                                         # 
