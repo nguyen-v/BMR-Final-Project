@@ -19,7 +19,7 @@ import time
 ## List of possible Thymio VIDs. This can be checked using check_vid().
 THYMIO_VID = [1559]
 
-## Number of tries 
+## Number of tries to connect to Thymio.
 MAX_NUM_ERR = float('inf')
 # MAX_NUM_ERR = 10
 

@@ -15,16 +15,16 @@ from thymio_connection import connect_to_thymio
 #  Global constants.                                                         # 
 # ========================================================================== #
 
-## Maximum motor speed (raw value)
+## Maximum motor speed (raw value).
 MAX_MOTOR_SPEED = 2**16
 
-## Time interval between each try to set/read variable
+## Time interval between each try to set/read variable.
 DELTA_T_VAR = 0.1
 
 ## Base motor speed.
 BASE_SPEED = 100
 
-## Rotation coefficient
+## Rotation coefficient.
 ROT_COEFF = 200/BASE_SPEED
 
 # ========================================================================== #
