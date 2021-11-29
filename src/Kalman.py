@@ -1,34 +1,36 @@
-import matplotlib.pyplot as plt
-import numpy as np
-from numpy.linalg import inv
-import math
+## 
+# @file kalman.py
+#
+# @brief Definition of class and functions to estimate system states with a Kalman filter.
 
-import sensors as sens
+# ========================================================================== #
+#  Imports.                                                                  # 
+# ========================================================================== #
+
+import numpy as np
+import math
+import thymio_utils
+
+from numpy.linalg import inv
+
+# ========================================================================== #
+#  Global constants.                                                         # 
+# ========================================================================== #
+
+# Sampling time in seconds
+T_s = 0.1
 
 # Input states of kalman_filter (Absolute Position (x,y), Absolute Speed(vx,vy), Motor speed(vr,vl) 
 # 								 and Angle(theta))
 # The inputs are defined by the Absolute speeds (u_vx, u_vy) and motor speeds (u_vx, u_vy).
+
+# ========================================================================== #
+#  Classes.                                                       			 # 
+# ========================================================================== #
+
 class kalman_filter():
 
 	def __init__(self):
-		self.T_s = 0.1 # sampling time
-		self.A = np.array([[1.0, 0, self.T_s, 0, 0, 0, 0],
-					[0, 1.0, 0, self.T_s, 0, 0, 0],
-					[0, 0, 1.0, 0, 0, 0, 0],
-					[0, 0, 0, 1.0, 0, 0, 0],
-					[0, 0, 0, 0, 1.0, 0, 0],
-					[0, 0, 0, 0, 0, 1.0, 0],
-					[0, 0, 0, 0, -0.5*self.T_s, 0.5*self.T_s, 1.0]])	
-
-		self.B = np.array([[self.T_s, 0, 0, 0],
-					[0, self.T_s, 0, 0],
-					[1.0, 0, 0, 0],
-					[0, 1.0, 0, 0],
-					[0, 0, 1.0, 0],
-					[0, 0, 0, 1.0],
-					[0, 0, -0.5*self.T_s,  0.5*self.T_s]])
-
-		self.C = np.identity(7)
 
 		#Values made only for testing, to be deleted.
 		self.x_test = 0.0
@@ -38,146 +40,237 @@ class kalman_filter():
 		self.vl_test = 0.5
 		self.vr_test = 0.5
 		self.angle_test = np.deg2rad(20.0)
+		self.K_t = 0.0
 
-		self.X_pred = np.zeros((7,1))
-		self.X_prev = np.zeros((7,1))
-		self.U_prev = np.zeros((4,1))
-		self.P_prev = np.zeros((np.size(self.A,0),np.size(self.A,0)))
+		self.X_pred = np.zeros((4,1))
+		self.X_prev = np.zeros((4,1))
+		self.U_prev = np.zeros((2,1))
+		self.P_prev = np.zeros((4,4))
 		self.R_prev = 0	
 
 
-		self.Q = np.diag([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined
-		self.R = np.diag([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined			 
+		self.Q = np.diag([0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined
+		self.R = np.diag([0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined			 
+
+	## Establishes the system's observation model.
+	#  @return X_pred   The à-prioris estimation of the states.
+	#  @return A  		Matrix describing the system's evolution.
+	#  @return B        Matrix linking the system's states and inputs.
+	def observation_model(self):
+
+		A = np.array([[1.0, 0, 0, 0],
+					[0, 1.0, 0, 0],
+					[0, 0, 1.0, 0],
+					[0, 0, 0, 1.0]])
 
 
+		B = np.array([[T_s, 0],
+					[0, T_s],
+					[1.0, 0],
+					[0, 1.0]])
+		
+		# Noise vector generation :
+		W = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
+		print(self.U_prev)
+		X_pred = A @ self.X_prev + B @ self.U_prev + W
 
+		return X_pred, A, B
 
-	def filter(self):
+	## Establishes the system's measurement model.
+	#  @return Y		The measurement model of the system.
+	#  @return C  		Matrix describing the system's measurements.
+	def measurement_model(self):
+
+		C = np.identity(4)
 
 		# Noise vector generation :
-		W = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(7,1)
-		V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(7,1)
-		# Covariance for KF simulation
+		V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
 
-		X_pred = self.A @ self.X_prev + self.B @ self.U_prev + W
-		
+		Y = np.array([[self.x_test], [self.y_test], [self.vx_test], [self.vy_test]]) + V
+		#Y = sens.measurements() + V
+		return Y, C
+
+	## Filters the noise of our system's states.
+	#  @return X_post		The à-posteriori estimates of the system's states.
+	def filter(self):
+
+		X_pred, A, B = self.observation_model()
 		self.kalman_save_prediction(X_pred)
 
-	#	Y = sens.measurements() + V
-
 	#   Values put for testing
-		self.measurements_test()
-		Y = np.array([[self.x_test], [self.y_test], [self.vx_test], [self.vy_test], [self.vr_test], [self.vl_test], [self.angle_test]]) + V
+		Y, C =self.measurement_model()
 		
-		P_pred = self.A @ self.P_prev @ self.A.transpose() + self.Q
+		P_pred = A @ self.P_prev @ A.transpose() + self.Q
 
 		# Innovation calculation : Difference between the measure and the prediction
-		I = Y - self.C @ X_pred
+		I = Y - C @ X_pred
 		
-
 		# Innovation variance calculation :
-		S_post = self.C @ P_pred @ self.C.transpose() + self.R
+		S_post = C @ P_pred @ C.transpose() + self.R
 
-		# Optimal gain fore correction :
-		K_t = P_pred @ self.C.transpose() @ inv(S_post) 
+		# Optimal gain for correction :
+		self.K_t= P_pred @ C.transpose() @ inv(S_post) 
+
 		# Calculation of the posteriori states :
-		X_post = X_pred + K_t @ I
+		X_post = X_pred + self.K_t@ I
 
 		# Calculation of posteriori state covariance matrix :
-		P_post = (I - K_t @ self.C) @ P_pred
+		P_post = (I - self.K_t@ C) @ P_pred
+
 		self.kalman_save_post_states(X_post, P_post, S_post)
 
-		return X_post, P_post, S_post
+		return X_post
 
+	## Saves the last calculated à-prioris state estimations
+	#  @param X_pred		The à-prioris estimation of the states.
 	def kalman_save_prediction(self, X_pred):
 		self.X_pred = X_pred
 	
+	## Returns the last calculated à-prioris state estimations
+	#  @return X_pred		The à-prioris estimation of the states.
 	def kalman_get_prediction(self):
 		return self.X_pred
 
+	## Saves the last calculated à-postériori state estimations and covariance matrices
+	#  @param X_post		The à-prioris estimation of the states.
+	#  @param P_post		The à-prioris estimation of the states.
+	#  @param S_post		The à-prioris estimation of the states.
 	def kalman_save_post_states(self, X_post, P_post, S_post):
 		self.X_prev, self.P_prev, self.R_prev = X_post, P_post, S_post
 
+	## Returns the last calculated à-postériori state estimations and covariance matrices
+	#  @return X_post		The à-prioris estimation of the states.
+	#  @return P_post		The à-prioris estimation of the states.
+	#  @return S_post		The à-prioris estimation of the states.
 	def kalman_get_prev_states(self):
 		return self.X_prev, self.U_prev, self.P_prev, self.R_prev
 
 	# Only made for testing, to be deleted
-	def measurements_test(self):
-		self.angle_test = (self.angle_test + np.deg2rad(1))
-		self.vl_test = 0.5
-		self.vr_test = 0.5
+	def measurements_test(self, vl_test, vr_test):
+		self.vl_test = vl_test
+		self.vr_test = vr_test
+		self.angle_test = ((self.angle_test + (vr_test-vl_test)*0.5*T_s) % (2*math.pi))
 		self.vx_test = (self.vr_test+self.vl_test)*math.cos(self.angle_test)/2
 		self.vy_test = (self.vr_test+self.vl_test)*math.sin(self.angle_test)/2
-		self.x_test = self.x_test + self.T_s*self.vx_test
-		self.y_test = self.y_test + self.T_s*self.vy_test
+		self.x_test = self.x_test + T_s*self.vx_test
+		self.y_test = self.y_test + T_s*self.vy_test
 
+	# Only made for testing, to be deleted
 	def return_meas_test(self):
 		return np.array([[self.x_test], [self.y_test]])
+
+	## Updates the inputs of the system into the Kalman filter
+	#  @param U_in		The new inputs of the system
+	def save_input_control(self, U_in):
+		self.U_prev = U_in
 		
 
-# Input states of extended_kalman_filter (Absolute Position (x,y), Absolute Speed(vx,vy), Angle(theta))
-class extended_kalman():
+# # Input states of extended_kalman_filter (Absolute Position (x,y), Absolute Speed(vx,vy), Angle(theta))
+# class extended_kalman():
 
-	def __init__(self):
+# 	def __init__(self):
 
-		self.T_s = 0.1 #ms
-		self.A = np.array([[1.0, 0, T_s, 0, 0],
-				[0, 1.0, 0, T_s, 0],
-				[0, 0, 1.0, 0, 0],
-				[0, 0, 0, 1.0, 0],
-				[0, 0, 0, 0, 1.0]])
+# 		T_s = 0.1 #ms
 
-		self.B = np.array([[T_s * math.cos(theta_m), 0],
-					[0, T_s * math.sin(theta_m)],
-					[1.0, 0, 0, 0],
-					[0, 1.0, 0, 0],
-					[0, 0, 2.0, 2.0]])
+# 		self.Q = np.diag([0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined
+# 		self.R = np.diag([0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined		
 
-		self.Q = np.diag([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined
-		self.R = np.diag([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])		# Temporary, to be determined		
+# 		self.X_pred = np.zeros((4,1))
+# 		self.X_prev = np.zeros((4,1))
+# 		self.Y_prev = np.zeros((4,1))
+# 		self.U_prev = np.array([0.1])
+# 		self.P_prev = np.zeros((4,4))
+# 		self.R_prev = 0	
 
-		self.X_pred = np.zeros((5,1))
-		self.X_prev = np.zeros((5,1))
-		self.Y_prev = np.zeros((5,1))
-		self.U_prev = np.zeros((4,1))
-		self.P_prev = np.zeros((np.size(self.A,0),np.size(self.A,0)))
-		self.R_prev = 0	
+# 		#Values made only for testing, to be deleted.
+# 		self.x_test = 0.0
+# 		self.y_test = 0.0
+# 		self.v_test = 0.5
+# 		self.vx_test = 0.5
+# 		self.vy_test = 0.5
+# 		self.vl_test = 0.2
+# 		self.vr_test = 0.2
+# 		self.angle_test = np.deg2rad(20.0)
 
-		#Values made only for testing, to be deleted.
-		self.x_test = 0.0
-		self.y_test = 0.0
-		self.vx_test = 0.5
-		self.vy_test = 0.5
-		self.angle_test = np.deg2rad(20.0)
+# 	def filter(self):
 
-	def extended_kalman_filter(self):
+# 		self.measurements_test(0.5,0.5)
+# 		A = np.array([[1.0, 0, T_s, 0, 0],
+# 					  [0, 1.0, 0, T_s, 0],
+# 					  [0, 0, 1.0, 0, 0],
+# 					  [0, 0, 0, 1.0, 0],
+# 					  [0, 0, 0, 0, 1.0]])
 
-		# Noise vector generation :
-		W = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(5,1)
-		V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(5,1)
-		# Covariance for KF simulation
+# 		B = np.array([[T_s, T_s*math.cos(self.X_prev[3,0]/2) ],
+# 					  [T_s * math.sin(self.X_prev[3,0])],
+# 					  [1.0],
+# 				      [0]])
 
-		self.X_pred = self.A @ self.X_prev + self.B @ self.U_prev + W
-		J_pred = np.array([[1.0, 0, self.T_s, 0, -self.T_s*X_pred[3,:]*math.sin(X_pred[5,:])],
-						   [0, 1.0, 0, self.T_s, self.T_s*X_pred[4,:]*math.cos(X_pred[5,:])],
-						   [0, 0, 1, 0, 0],
-						   [0, 0, 0, 1, 0],
-						   [0, 0, 0, 0, 1]])		
+# 		C = np.identity(4)
 
-		Y = np.array([[self.x_test], [self.y_test], [self.vx_test], [self.vy_test], [self.angle_test]]) + V
-		J_m = np.identity(5)
+# 		# Noise vector generation :
+# 		W = 1e-3*np.diag([1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(4,1)
+# 		V = 1e-3*np.diag([1.0, 1.0, 1.0, np.deg2rad(20.0)]) @ np.random.randn(4,1)
+# 		# Covariance for KF simulation
 
-		P_pred = J_pred @ self.P_prev @ J_pred.transpose() + self.R
+# 		self.X_pred = A @ self.X_prev + B @ self.U_prev + W
+# 		self.kalman_save_prediction(self.X_pred)
 
-		# Innovation calculation : Difference between the measure and the prediction
-		I = Y - self.C @ X_pred
+# 		J_pred = np.array([[1.0, 0, T_s*math.cos(self.X_pred[3,0]), -T_s*self.X_pred[2,0]*math.sin(self.X_pred[3,0])],
+# 						   [0, 1.0, T_s*math.sin(self.X_pred[3,0]), T_s*self.X_pred[2,0]*math.cos(self.X_pred[3,0])],
+# 						   [0, 0, 1.0, 0],
+# 						   [0, 0, 0, 1.0]]),		
 		
-		K = P_pred @ J_m.transpose() @ inv(J_m @ P_pred @ J_m.transpose() + self.Q)
+# 		Y = np.array([[self.x_test], [self.y_test], [self.v_test], [self.angle_test]]) + V
+# 		self.kalman_save_prev_measurements(Y)
+# 		print(J_pred)
+# 		J_m = np.identity(4)
 
-		X_post = X_pred + K @ (Y - Y_prev)
-		P_post = (I - K @ J_m) @ P_pred
+# 		P_pred = J_pred @ self.P_prev @ J_pred.transpose() + self.R
 
-		return X_post
+# 		# Innovation calculation : Difference between the measure and the prediction
+# 		I = Y - C @ self.X_pred
+# 		K = P_pred @ J_m.transpose() @ inv(J_m @ P_pred @ J_m.transpose() + self.Q)
 
+# 		X_post = self.X_pred + K @ (Y - J_m @ self.X_pred) 
+# 		P_post = (I - K @ J_m) @ P_pred
+
+# 		print(X_post)
+# 		self.kalman_save_post_states(X_post, P_post)
+
+# 		return X_post
+
+# 	def kalman_save_prediction(self, X_pred):
+# 		self.X_pred = X_pred
+	
+# 	def kalman_get_prediction(self):
+# 		return self.X_pred
+
+# 	def kalman_save_post_states(self, X_post, P_post):
+# 		self.X_prev, self.P_prev = X_post, P_post
+
+# 	def kalman_get_prev_states(self):
+# 		return self.X_prev
+
+# 	def kalman_save_prev_measurements(self, Y_prev):
+# 		self.Y_prev = Y_prev
+
+# 	def kalman_set_prev_measurements(self):
+# 		return self.Y_prev
+
+# 	# Only made for testing, to be deleted
+# 	def measurements_test(self, vl_test, vr_test):
+# 		self.vl_test = vl_test
+# 		self.vr_test = vr_test
+# 		self.angle_test = ((self.angle_test + (vr_test-vl_test)*0.5*T_s) % (2*math.pi))
+# 		self.vx_test = (self.vr_test+self.vl_test)*math.cos(self.angle_test)/2
+# 		self.vy_test = (self.vr_test+self.vl_test)*math.sin(self.angle_test)/2
+# 		self.v_test = (self.vr_test+self.vl_test)/2
+# 		self.yaw = self.v_test / (0.7*(vl_test-vr_test)/(vl_test - vr_test))
+# 		self.x_test = self.x_test + T_s*self.vx_test
+# 		self.y_test = self.y_test + T_s*self.vy_test
+
+# 	def return_meas_test(self):
+# 		return np.array([[self.x_test], [self.y_test]])
 
 	
