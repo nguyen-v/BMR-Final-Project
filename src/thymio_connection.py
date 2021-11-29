@@ -21,14 +21,13 @@ THYMIO_VID = [1559]
 
 ## Number of tries 
 MAX_NUM_ERR = float('inf')
+# MAX_NUM_ERR = 10
 
 ## Serial connection with thymio refresh rate.
 DEF_REFR_RATE = 0.1
 
 ## Time between each connection try.
 DELTA_T_ERR = 1
-
-
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -70,4 +69,3 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
     if verbose:
         print("Connection to thymio unsucessful.")
     return None
-
