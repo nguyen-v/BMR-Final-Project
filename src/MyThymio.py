@@ -122,4 +122,10 @@ class MyThymio():
         self.last_thymio_pos = np.array([thymio_pos[0],thymio_pos[1]])
         self.last_theta_m = theta_m
 
-
+    ## Returns raw horizontal proximity sensor values.
+    #  @return prox_horizontal      Array of proximity sensor raw values.
+    def get_prox_horizontal(self):
+        try:
+            return self.ser["prox.horizontal"]
+        except (KeyError, ValueError):
+            pass
