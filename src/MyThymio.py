@@ -122,3 +122,4 @@ class MyThymio():
         self.last_thymio_pos = np.array([thymio_pos[0],thymio_pos[1]])
         self.last_theta_m = theta_m
 
+
