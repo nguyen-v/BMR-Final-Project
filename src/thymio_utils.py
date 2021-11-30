@@ -14,58 +14,78 @@ import time
 # ========================================================================== #
 
 ## Maximum motor speed (raw value).
-MAX_MOTOR_SPEED = 2**16
+MAX_RAW_MOTOR_SPEED = 2**16
 
-## Time interval between each try to set/read variable.
-DELTA_T_VAR = 0.1
+## Maximum motor speed (converted to negative and positive range).
+MAX_MOTOR_SPEED = 500
 
 ## Base motor speed.
 BASE_SPEED = 100
+# BASE_SPEED = 150
 
 ## Rotation coefficient.
-ROT_COEFF = 200/BASE_SPEED
+ROT_COEFF = 1.362   # for BASE_SPEED = 100
+# ROT_COEFF = 0.942   # for BASE_SPEED = 150
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #
 
-## Set motor right speed (raw value).
-#  @param       th      Thymio serial connection instance.
-#  @param       speed   Raw speed value.
+## Set motor right speed (positive or negative).
+#  @param       th          Thymio serial connection instance.
+#  @param       speed       Positive or negative speed value.
 def set_motor_right_speed(th, speed):
-    speed_set = False
-    while not speed_set:
-        try:
-            if speed >= 0:
-                th.set_var("motor.right.target", speed)
-            else:
-                th.set_var("motor.right.target", MAX_MOTOR_SPEED + speed)
-            speed_set = True
-        except (IndexError, KeyError): # Raised if forgot to wait after connecting to Thymio.
-            time.sleep(DELTA_T_VAR)
-            pass
+    try:
+        if speed >= 0:
+            th.set_var("motor.right.target", speed)
+        else:
+            th.set_var("motor.right.target", MAX_RAW_MOTOR_SPEED + speed)
+    except (IndexError, KeyError): # Raised if forgot to wait after connecting to Thymio.
+        pass
 
-
-## Set motor left speed (raw value).
+## Get motor right speed (positive or negative).
 #  @param       th          Thymio serial connection instance.
-#  @param       speed       Raw speed value.
+#  @return      speed       Positive or negative right speed value.
+def get_motor_right_speed(th):
+    try:
+        speed = th.get_var("motor.right.speed")
+        if speed <= MAX_MOTOR_SPEED:
+            return speed
+        else:
+            return speed - MAX_RAW_MOTOR_SPEED
+    except (IndexError, KeyError):
+        return 0
+        
+
+## Set motor left speed (positive or negative).
+#  @param       th          Thymio serial connection instance.
+#  @param       speed       Positive or negative speed value.
 def set_motor_left_speed(th, speed):
-    speed_set = False
-    while not speed_set:
-        try:
-            if speed >= 0:
-                th.set_var("motor.left.target", speed)
-            else:
-                th.set_var("motor.left.target", MAX_MOTOR_SPEED + speed)
-            speed_set = True
-        except (IndexError, KeyError): # Raised if forgot to wait after connecting to Thymio.
-            time.sleep(DELTA_T_VAR)
-            pass
+    try:
+        if speed >= 0:
+            th.set_var("motor.left.target", speed)
+        else:
+            th.set_var("motor.left.target", MAX_RAW_MOTOR_SPEED + speed)
+    except (IndexError, KeyError): # Raised if forgot to wait after connecting to Thymio.
+        pass
 
-## Set motor speeds (raw values).
+## Get motor left speed (positive or negative).
 #  @param       th          Thymio serial connection instance.
-#  @param       speed_l     Raw left speed value. 
-#  @param       speed_r     Raw right speed value.     
+#  @return      speed       Positive or negative left speed value.
+def get_motor_left_speed(th):
+    try:
+        speed = th.get_var("motor.left.speed")
+        if speed <= MAX_MOTOR_SPEED:
+            return speed
+        else:
+            return speed - MAX_RAW_MOTOR_SPEED
+    except (IndexError, KeyError):
+        return 0
+
+## Set motor speeds (positive or negative).
+#  @param       th          Thymio serial connection instance.
+#  @param       speed_l     Positive or negative left speed value. 
+#  @param       speed_r     Positive or negative right speed value.     
 def set_motor_speeds(th, speed_l, speed_r):
     set_motor_left_speed(th, speed_l)
     set_motor_right_speed(th, speed_r)
@@ -75,7 +95,7 @@ def set_motor_speeds(th, speed_l, speed_r):
 def stop_thymio(th):
     set_motor_speeds(th, 0, 0)
 
-## Rotate Thymio
+## Rotate Thymio by given angle.
 #  @param       th          Thymio serial connection instance.
 #  @param       angle       Angle in radian. Positive angle is counter-clockwise.
 def rotate_thymio(th, angle):

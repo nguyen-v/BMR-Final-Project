@@ -29,6 +29,9 @@ DEF_REFR_RATE = 0.1
 ## Time between each connection try.
 DELTA_T_ERR = 1
 
+## Cooldown wait time after connection.
+DETTA_T_COOLDOWN = 3
+
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #
@@ -61,6 +64,7 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
         if len(thymio_port) != 0:
             # If multiple Thymios are connected, just connect to the first one on the list.
             th = Thymio.serial(port = thymio_port[0], refreshing_rate = DEF_REFR_RATE) 
+            time.sleep(DETTA_T_COOLDOWN)
             if verbose:
                 print("Successfully connected to thymio on {}.".format(thymio_port[0]))
             return th
