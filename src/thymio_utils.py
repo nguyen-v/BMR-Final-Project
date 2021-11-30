@@ -47,12 +47,12 @@ class thymio_control():
 	def measurements():
 #		if cmr.camera_state(): # Function tells you if we can locate the thymio or not.
 			cell, thymio_pos, theta_m = locate_thymio_camera(rectified_image) # Necessitates the appropriate function...
-			v_m = numpy.array([th.get_var("motor.right.speed"), th.get_var("motor.left.speed")])
+			v_m = numpy.array([self.th_mode.get_var("motor.right.speed"), self.th_mode.get_var("motor.left.speed")])
 			save_last_position(thymio_pos, theta_m)
 
 #		else:
 			thymio_pos, theta_m = self.get_last_position()
-			v_m = numpy.array([th.get_var("motor.right.speed"), th.get_var("motor.left.speed")])
+			v_m = numpy.array([self.th_mode.get_var("motor.right.speed"), self.th_mode.get_var("motor.left.speed")])
 			abs_v = numpy.array([((vr_m + vl_m) / 2) * math.cos(theta_m),((vr_m + vl_m) / 2) * math.sin(theta_m)])
 			
 #		return thymio_pos, abs_v, v_m, theta_m
@@ -63,7 +63,9 @@ class thymio_control():
 	def thymio_rotate(self, angle_rad, direction):
 		self.set_left_motor_speed(BASE_LEFT_SPEED*direction)
 		self.set_right_motor_speed(-BASE_RIGHT_SPEED*direction)
+
 		time.sleep(FULL_ROTATION_TIME*angle_rad/(2*math.pi))
+
 		self.set_left_motor_speed(STOP_MOTOR)
 		self.set_right_motor_speed(STOP_MOTOR)
 

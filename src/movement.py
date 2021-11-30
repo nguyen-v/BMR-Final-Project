@@ -72,7 +72,7 @@ def initialization():
     img = take_picture(cam)
     binary_map, rect_width, rect_height, map, map_enlarged, success = mapping.create_map(img, MAP_WIDTH, MAP_LENGTH)
     rect_map, rect_width, rect_height, success  = mapping.get_warp_matrix(img, MAP_WIDTH, MAP_LENGTH)
-    # Locate objective (Function required)
+     = locate_thymio_camera(rect_map, "cartesian", [])
     # Locate Thymio (Function required)
     # Calculate Global Path (Function required)
     return binary_map, rect_map, map, map_enlarged
