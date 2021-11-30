@@ -8,7 +8,6 @@
 # ========================================================================== #
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 
 # ========================================================================== #
@@ -33,8 +32,6 @@ def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH, exp_num_pts = None):
     # erode mask to avoid noise
     kernel = np.ones((2,2),np.uint8)
     mask = cv2.erode(mask,kernel,iterations = 3)
-    plt.figure()
-    plt.imshow(mask)
     # extract contours of dots
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = list(contours)
