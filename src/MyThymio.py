@@ -98,12 +98,12 @@ class MyThymio():
         self.set_motor_speeds(0, 0)
 
     ## Rotate Thymio by given angle.
-    #  @param       angle       Angle in radian. Positive angle is counter-clockwise.
+    #  @param       angle       Angle in radian. Positive angle is clockwise.
     def rotate_thymio(self, angle):
         if angle >= 0:
-            self.set_motor_speeds(-BASE_SPEED, BASE_SPEED)
-        else:
             self.set_motor_speeds(BASE_SPEED, -BASE_SPEED)
+        else:
+            self.set_motor_speeds(-BASE_SPEED, BASE_SPEED)
         time.sleep(abs(angle)*ROT_COEFF)
         self.stop_thymio()
 
