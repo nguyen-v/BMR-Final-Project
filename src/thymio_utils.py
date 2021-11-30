@@ -10,6 +10,7 @@
 import numpy as np
 import math
 import time
+import Thymio as th
 
 # ========================================================================== #
 #  Global constants.                                                         # 
@@ -36,6 +37,7 @@ class thymio_control():
 	def __init__(self):
 		self.last_thymio_pos = np.zeros(2,1)
 		self.last_theta_m = 0
+		self.th_mode = th.RemoteNode()
 
 	## Returns the position, absolute speeds, motor speeds and orientation of the thymio .
 	#  @return thymio_pos   The position of the thymio.
@@ -75,22 +77,22 @@ class thymio_control():
 	## Sets the left motor's target speed.
 	#  @param left_speed   The left motor's target speed.
 	def set_left_motor_speed(left_speed):
-		th.set_var("motor.left.target", left_speed)
+		self.th_mode.set_var("motor.left.target", left_speed)
 
 	## Sets the right motor's target speed.
 	#  @param right_speed   The right motor's target speed.
 	def set_right_motor_speed(right_speed):
-		th.set_var("motor.right.target", right_speed)
+		self.th_mode.set_var("motor.right.target", right_speed)
 
 	## returns the left motor's target speed.
 	#  @return left_speed   The left motor's target speed.
-	def get_left_motor_speed(left_speed):
-		return th.get_var("motor.left.speed", left_speed)
+	def get_left_motor_speed(lef):
+		return self.th_mode.get_var("motor.left.speed")
 
 	## Sets the right motor's target speed.
 	#  @return right_speed   The right motor's target speed.
 	def get_right_motor_speed(right_speed):
-		return th.get_var("motor.right.speed", right_speed)
+		return self.th_mode.get_var("motor.right.speed")
 
 	## Converts a measured speed to meter per seconds
 	#  @param speed   A speed in the thymio's units.
@@ -107,3 +109,6 @@ class thymio_control():
 	## Returns the thymio's last position.
 	def get_last_position(self):
 		return self.last_thymio_pos
+
+	def ground_measure(self):
+		return self.th_mode.get_var("prox.ground.delta")
