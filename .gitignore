@@ -1,0 +1,5 @@
+src/threading_training.py
+src/__pycache__/kalman.cpython-39.pyc
+src/__pycache__/sensors.cpython-39.pyc
+src/__pycache__/Thymio.cpython-39.pyc
+src/__pycache__/thymio_utils.cpython-39.pyc
