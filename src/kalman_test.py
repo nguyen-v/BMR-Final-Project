@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-from kalman import kalman_filter as KF
+from Kalman import kalman_filter as KF
 # from Kalman import extended_kalman as EKF
 
 # ========================================================================== #
@@ -52,9 +52,9 @@ def main():
             main_filter.save_input_control(np.array([[-xPost[2,0]],[-xPost[3,0]]]))
             main_filter.measurements_test(0,0)
         elif time >= 2.1 and time <= 4:
-            main_filter.measurements_test(-0.1,0.5)
-            main_filter.save_input_control(np.array([[(-0.3+0.5)/2*math.cos(main_filter.angle_test)],[(-0.3+0.5)/2*math.sin(main_filter.angle_test)]]))
-        elif time > 4:
+            main_filter.measurements_test(-0.3,0.5)
+            main_filter.save_input_control(np.array([[(-0.3+0.5)/2*math.cos(main_filter.angle_test)],[(-0.5+0.5)/2*math.sin(main_filter.angle_test)]]))
+        elif time > 7:
             main_filter.measurements_test(0.5,0.5)
             main_filter.save_input_control(np.zeros((2,1)))
 

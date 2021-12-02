@@ -9,7 +9,7 @@
 
 import numpy as np
 import math
-import thymio_utils
+import MyThymio
 
 from numpy.linalg import inv
 
@@ -17,8 +17,6 @@ from numpy.linalg import inv
 #  Global constants.                                                         # 
 # ========================================================================== #
 
-# Sampling time in seconds
-T_s = 0.1
 
 # Input states of kalman_filter (Absolute Position (x,y), Absolute Speed(vx,vy), Motor speed(vr,vl) 
 # 								 and Angle(theta))
@@ -32,6 +30,9 @@ class kalman_filter():
 
 	def __init__(self):
 
+		# Sampling time in seconds
+		self.T_s = 0.1
+		
 		#Values made only for testing, to be deleted.
 		self.x_test = 0.0
 		self.y_test = 0.0
@@ -64,8 +65,8 @@ class kalman_filter():
 					[0, 0, 0, 1.0]])
 
 
-		B = np.array([[T_s, 0],
-					[0, T_s],
+		B = np.array([[self.T_s, 0],
+					[0, self.T_s],
 					[1.0, 0],
 					[0, 1.0]])
 		
@@ -149,11 +150,11 @@ class kalman_filter():
 	def measurements_test(self, vl_test, vr_test):
 		self.vl_test = vl_test
 		self.vr_test = vr_test
-		self.angle_test = ((self.angle_test + (vr_test-vl_test)*0.5*T_s) % (2*math.pi))
+		self.angle_test = ((self.angle_test + (vr_test-vl_test)*0.5*self.T_s) % (2*math.pi))
 		self.vx_test = (self.vr_test+self.vl_test)*math.cos(self.angle_test)/2
 		self.vy_test = (self.vr_test+self.vl_test)*math.sin(self.angle_test)/2
-		self.x_test = self.x_test + T_s*self.vx_test
-		self.y_test = self.y_test + T_s*self.vy_test
+		self.x_test = self.x_test + self.T_s*self.vx_test
+		self.y_test = self.y_test + self.T_s*self.vy_test
 
 	# Only made for testing, to be deleted
 	def return_meas_test(self):
@@ -163,6 +164,9 @@ class kalman_filter():
 	#  @param U_in		The new inputs of the system
 	def save_input_control(self, U_in):
 		self.U_prev = U_in
+	
+	def update_sampling_time(self, T_s):
+		self.T_s = T_s
 		
 
 # # Input states of extended_kalman_filter (Absolute Position (x,y), Absolute Speed(vx,vy), Angle(theta))
