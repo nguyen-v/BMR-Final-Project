@@ -1,5 +1,22 @@
+<<<<<<< HEAD
 src/threading_training.py
 src/__pycache__/kalman.cpython-39.pyc
 src/__pycache__/sensors.cpython-39.pyc
 src/__pycache__/Thymio.cpython-39.pyc
 src/__pycache__/thymio_utils.cpython-39.pyc
+=======
+src/__pycache__/create_map.cpython-39.pyc
+src/__pycache__/img_utils.cpython-310.pyc
+src/__pycache__/img_utils.cpython-39.pyc
+src/__pycache__/MyThymio.cpython-310.pyc
+src/__pycache__/Thymio.cpython-310.pyc
+src/__pycache__/Thymio.cpython-39.pyc
+src/__pycache__/thymio_connection.cpython-310.pyc
+src/__pycache__/thymio_connection.cpython-39.pyc
+src/__pycache__/thymio_utils.cpython-310.pyc
+src/__pycache__/thymio_utils.cpython-39.pyc
+src/__pycache__/camera.cpython-310.pyc
+src/__pycache__/create_map.cpython-310.pyc
+src/__pycache__/local_navigation.cpython-310.pyc
+src/__pycache__/locate_thymio_goal.cpython-310.pyc
+>>>>>>> d51582c389f79e41f454fba06ca3ca05c4f67805

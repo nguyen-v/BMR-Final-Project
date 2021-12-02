@@ -38,10 +38,12 @@ def take_picture(cam, video = 0):
         ret_val,img = cam.read()
         # print("ret_val : {}, is_opened : {}.".format(ret_val,cam.isOpened()))
         if ret_val:
-            cv2.imshow('Window', img)
-            cv2.waitKey(1)
-            save_camera_img(img)   
-            return img 
+            # cv2.imshow('Window', img)
+            # cv2.waitKey(1)
+            # save_camera_img(img)   
+            return img, ret_val
+        else:
+            return [], ret_val
                 
 def img_ready():
     global img_ready 
