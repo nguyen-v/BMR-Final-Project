@@ -1,21 +1,20 @@
-import cv2
-import matplotlib.pyplot as plt
+
 import math 
 import numpy as np
-import os
 
-# import img_utils
 from img_utils import get_color_dots
 
+
 #BGR2HSV gives value from 0 to 180 fro the first component
-GREEN_THR_HSV_HIGH = (55, 255, 255)
-GREEN_THR_HSV_LOW = (35, 110, 110)
+
+GREEN_THR_HSV_HIGH = (60, 255, 255)
+GREEN_THR_HSV_LOW = (45, 110, 110)
 
 BLUE_THR_HSV_HIGH = (100, 255, 255)
 BLUE_THR_HSV_LOW = (80, 110, 110)
 
 PURPLE_THR_HSV_HIGH = (145, 255, 255)
-PURPLE_THR_HSV_LOW = (125, 110, 110)
+PURPLE_THR_HSV_LOW = (125, 50, 50)
 
 
 #thymio's rotaion point is blue, thymio's "direction point" is purple, goal is green;
@@ -48,15 +47,8 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
     if(found_rot_point and found_dir_point):
         thymio_rot_point = thymio_rot_point[0]
         thymio_dir_point = thymio_dir_point[0]
-        if ((thymio_rot_point[0]-thymio_dir_point[0]) != 0):
-            angle = math.atan((thymio_dir_point[1]-thymio_rot_point[1])/(thymio_dir_point[0]-thymio_rot_point[0]))
-            if(thymio_dir_point[0]<thymio_rot_point[0]):
-                angle = angle + math.pi
-        else:
-            if(thymio_dir_point[1]>thymio_rot_point[1]):
-                angle = math.pi/2
-            else:
-                angle = 3*math.pi/2
+        # angle is zero on the right, goes to pi counter clockwise, goes to -pi counter clockwise
+        angle = math.atan2(-(thymio_dir_point[1]-thymio_rot_point[1]), thymio_dir_point[0] - thymio_rot_point[0]) 
         if(coord_type == 'cartesian'):
             thymio_pose = np.append(thymio_rot_point,angle)
             return thymio_pose, True
@@ -67,7 +59,6 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
             return thymio_pose, True   
     else:
         return [], False
-
     
 ## Returns position of the goal if found
 #  @param rectified_img  Array containing each pixels of the rectified image from the camera 
@@ -91,4 +82,5 @@ def locate_goal_camera(rectified_img,coord_type, grid_size):
             return goal_coords, True   
     else:
         return [], False 
+
     

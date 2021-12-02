@@ -27,8 +27,14 @@ RAW_IMG_WIDTH = 800
 ## Raw image height in pixels.
 RAW_IMG_HEIGHT = 600
 
-## Number of corners for the map boundary
+## Number of corners for the map boundary.
 NUM_MAP_CORNERS = 4
+
+## Map width in number of cells.
+MAP_WIDTH_CELL = 11
+
+## Map height in number of cells.
+MAP_HEIGHT_CELL = 7
 
 ## Binary image conversion low threshold.
 BIN_THR_LOW = 128
