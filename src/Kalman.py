@@ -80,32 +80,34 @@ class kalman_filter():
 	## Establishes the system's measurement model.
 	#  @return Y		The measurement model of the system.
 	#  @return C  		Matrix describing the system's measurements.
-	def measurement_model(self):
+	def measurement_model(self, thymio_pos, abs_v):
 
 		C = np.identity(4)
 
 		# Noise vector generation :
 		V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
 
-		Y = np.array([[self.x_test], [self.y_test], [self.vx_test], [self.vy_test]]) + V
+		Y = np.array([[thymio_pos[0]], [thymio_pos[1]], [abs_v[0]], [abs_v[1]]]) + V
 		#Y = sens.measurements() + V
+
 		return Y, C
 
 	## Filters the noise of our system's states.
 	#  @return X_post		The à-posteriori estimates of the system's states.
-	def filter(self):
-
+	def filter(self, thymio_pos, abs_v, new_T_s):
+		
+		update_sampling_time(new_T_s)
 		X_pred, A, B = self.observation_model()
 		self.kalman_save_prediction(X_pred)
 
-	#   Values put for testing
-		Y, C =self.measurement_model()
+		#   Values put for testing
+		Y, C =self.measurement_model(thymio_pos, abs_v)
 		
 		P_pred = A @ self.P_prev @ A.transpose() + self.Q
 
 		# Innovation calculation : Difference between the measure and the prediction
 		I = Y - C @ X_pred
-		
+
 		# Innovation variance calculation :
 		S_post = C @ P_pred @ C.transpose() + self.R
 
