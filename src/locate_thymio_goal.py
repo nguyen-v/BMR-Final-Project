@@ -71,9 +71,9 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
 def locate_goal_camera(rectified_img,coord_type, grid_size):
     
     goal_coords, found_goal = get_color_dots(rectified_img, GREEN_THR_HSV_LOW, GREEN_THR_HSV_HIGH, 1)
-    goal_coords = goal_coords[0]
     
     if(found_goal):
+        goal_coords = goal_coords[0]
         if(coord_type == 'cartesian'):
             return goal_coords, True
         else:
