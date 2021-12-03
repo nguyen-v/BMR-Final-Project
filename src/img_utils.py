@@ -8,8 +8,8 @@
 # ========================================================================== #
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -32,9 +32,10 @@ def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH, exp_num_pts = None):
     mask = cv2.inRange(hsv, HSV_THR_LOW, HSV_THR_HIGH)
     # erode mask to avoid noise
     kernel = np.ones((2,2),np.uint8)
-    mask = cv2.erode(mask,kernel,iterations = 3)
-    plt.figure()
-    plt.imshow(mask)
+    mask = cv2.erode(mask,kernel,iterations = 5)
+    # plt.figure()
+    # plt.imshow(mask)
+    # plt.show()
     # extract contours of dots
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = list(contours)
@@ -45,9 +46,12 @@ def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH, exp_num_pts = None):
     for c in contours:
         # calculate moments for each contour
         M = cv2.moments(c)
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        dots.append((cX, cY))
+        try:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            dots.append((cX, cY))
+        except ZeroDivisionError:
+            pass
     
     if exp_num_pts != None:
         if len(dots) >= exp_num_pts:
