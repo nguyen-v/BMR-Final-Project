@@ -15,12 +15,7 @@ from create_map import *
 import math
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-import os
-
-dirname = os.path.dirname(__file__)
-img_path = os.path.join(dirname, '../img/test_points4.png')
 
 # ========================================================================== #
 #  Global constants.                                                         # 
@@ -29,26 +24,17 @@ img_path = os.path.join(dirname, '../img/test_points4.png')
 ## Number of proximity sensor values.
 NUM_PROX_VALUES = 7
 
+## Number of memories
+NUM_MEM = 2
+
 ## Number of ground sensors values.
 NUM_GND_SENS = 2
 
-# get measurements from front prox sensors
-# get position and orientation of Thymio
-# get objective from global path
-# calculate vector and associated weights
-# calcultate weights from prox sensors
-
-# purple is front of thymio
-# function gives center of rotation (blue point)
-
-# def local_avoidance(thymio):
-#     thymio_pose, found_thymio = locate_thymio_camera(img, 'cartesian', (11, 7))
-
 ## Left weights for local obstacle avoidance, taken from Exercise Session 3
-WEIGHTS_LEFT_PROX = [40,  20, -20, -20, -40,  30, -10]
+WEIGHTS_LEFT_PROX = [40,  20, -20, -20, -40,  30, -10, 8, 0]
 
 ## Right weights for local obstacle avoidance, taken from Exercise Session 3
-WEIGHTS_RIGHT_PROX = [-40, -20, -20,  20,  40, -10, 30]
+WEIGHTS_RIGHT_PROX = [-40, -20, -20,  20,  40, -10, 30, 0, 8]
 
 ## Left weights for fixed obstacles avoidance.
 WEIGHTS_LEFT_GND = [50, -20]
@@ -57,7 +43,7 @@ WEIGHTS_LEFT_GND = [50, -20]
 WEIGHTS_RIGHT_GND = [-20, 50]
 
 ## Scale factor for proximity sensors.
-PROX_SCALE = 200
+PROX_SCALE = 20
 
 ## Scale factor for ground sensors.
 GND_SCALE = 200
@@ -65,16 +51,20 @@ GND_SCALE = 200
 ## Scale factor for motors.
 MOTOR_SCALE = 15
 
+## Memory scale factor for the motors
+MEM_SCALE = 50
+
 ## Objective attractiveness coefficient.
-OBJ_ATT_COEFF = 50
+OBJ_ATT_COEFF = 4000
 
 ## Objective base attractiveness
-OBJ_ATT_BASE = 50
+OBJ_ATT_BASE = 1000
 
 ## Local avoidance threshold distance to local objective (in px).
 LOC_DIST_THR = 20
 
-x = np.zeros(NUM_PROX_VALUES)
+## Local avoidance time step
+TS_LOCAL = 0.1
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -82,71 +72,73 @@ x = np.zeros(NUM_PROX_VALUES)
 
 ## Avoids a local obstacle (not detected by the camera)
 #  @param       thymio          Thymio instance.
-#  @return      has_avoided     True if it has avoided the obstacle.
-def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height):
+#  @param       obj_pos         Local objective position (x, y).
+#  @param       cam             Camera instance.
+#  @param       M               Warp transform matrix.
+#  @param       rect_width      Width of rectified image in pixels.
+#  @param       rect_height     Height of rectified image in pixels.
+def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = False):
+    front_prox = np.zeros(NUM_PROX_VALUES + NUM_MEM)
+    y = np.zeros(2)
+    while True:
+        img, img_taken= take_picture(cam)
+        print(img_taken)
+        if img_taken:
+            img_rect = get_rectified_img(img, M, rect_width,  rect_height)
+            # cv2.imshow('Window', img_rect)
+            # cv2.waitKey(1)
+            thymio_pose, found_thymio = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+            if verbose:
+                print("Found thymio: {}".format(found_thymio))
+                print(thymio_pose)
+            if found_thymio:
+                
+                # Add memory terms
+                front_prox[NUM_PROX_VALUES] = y[0]/50
+                front_prox[NUM_PROX_VALUES+1] = y[1]/50
 
-    img = take_picture(cam)
-    rect_img = get_rectified_img(img, M, rect_width, rect_height)
-    thymio_pose, found_thymio = locate_thymio_camera(rect_img, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+                # Local obstacles contribution (repulsive)
+                front_prox[0:NUM_PROX_VALUES] = np.divide(thymio.get_prox_horizontal(), PROX_SCALE)
 
-    if found_thymio:
-        y = np.zeros(2)
+                y = np.zeros(2)
+                for i in range(NUM_PROX_VALUES + NUM_MEM):
+                    y[0] = y[0] + front_prox[i] * WEIGHTS_LEFT_PROX[i]
+                    y[1] = y[1] + front_prox[i] * WEIGHTS_RIGHT_PROX[i]
+                
+                # Local objective contribution (attractive)
+                a_th_obj = angle_two_points(thymio_pose[0], thymio_pose[1], obj_pos[0], obj_pos[1])
+                da = thymio_pose[2] - a_th_obj
+                if (da < -math.pi):
+                    da = da + 2*math.pi
+                if (da > math.pi):
+                    da = da - 2*math.pi
+                if verbose:
+                    print("Delta angle: {}".format(da))
+                y[0] = y[0] + OBJ_ATT_BASE + da/math.pi*OBJ_ATT_COEFF
+                y[1] = y[1] + OBJ_ATT_BASE - da/math.pi*OBJ_ATT_COEFF
 
-        # Local obstacles contribution (repulsive)
-        front_prox = np.divide(thymio.get_prox_horizontal(), PROX_SCALE)
-        for i in range(NUM_PROX_VALUES):
-            y[0] = y[0] + front_prox[i] * WEIGHTS_LEFT_PROX[i]
-            y[1] = y[1] + front_prox[i] * WEIGHTS_RIGHT_PROX[i]
-        
-        # Local objective contribution (attractive)
-        a_th_obj = angle_two_points(thymio_pose[0], thymio_pose[1], obj_pos[0], obj_pos[1])
-        da = thymio_pose[2] - a_th_obj
-        y[0] = y[0] + OBJ_ATT_BASE + da/math.pi*OBJ_ATT_COEFF
-        y[1] = y[1] + OBJ_ATT_BASE - da/math.pi*OBJ_ATT_COEFF
+                # # Map obstacles contribution (repulsive)
+                # gnd_sens = np.divide(thymio.get_gnd_sensors(), GND_SCALE)
+                # we have to put a threshold on ground sensors if global obstacles have no gradient
+                # for i in range(NUM_GND_SENS):
+                #     y[0] = y[0] + gnd_sens[i] * WEIGHTS_LEFT_GND[i]
+                #     y[1] = y[1] + gnd_sens[i] * WEIGHTS_RIGHT_GND[i]
 
-        # # Map obstacles contribution (repulsive)
-        # gnd_sens = np.divide(thymio.get_gnd_sensors(), GND_SCALE)
-        # we have to put a threshold on ground sensors if global obstacles have no gradient
-        # for i in range(NUM_GND_SENS):
-        #     y[0] = y[0] + gnd_sens[i] * WEIGHTS_LEFT_GND[i]
-        #     y[1] = y[1] + gnd_sens[i] * WEIGHTS_RIGHT_GND[i]
-
-        thymio.set_motor_left_speed(int(y[0]/MOTOR_SCALE))
-        thymio.set_motor_right_speed(int(y[1]/MOTOR_SCALE))
-        print(thymio.get_motor_left_speed())
-        print("y0: {} y1: {}".format(int(y[0]/MOTOR_SCALE), int(y[1]/MOTOR_SCALE)))
-    else:
-        thymio.stop_thymio()
-    
-    if math.dist([thymio_pose[0], thymio_pose[1]], [obj_pos[0], obj_pos[1]]) < LOC_DIST_THR:
-        thymio.stop_thymio()
-        return
-    time.sleep(0.1)
+                thymio.set_motor_left_speed(int(y[0]/MOTOR_SCALE))
+                thymio.set_motor_right_speed(int(y[1]/MOTOR_SCALE))
+                if math.dist([thymio_pose[0], thymio_pose[1]], [obj_pos[0], obj_pos[1]]) < LOC_DIST_THR:
+                    thymio.stop_thymio()
+                    break
+            else:
+                thymio.stop_thymio()
+    time.sleep(TS_LOCAL)
 
 
+## Calculates the angle formed by x-axis and the line intersecting two input points.
+#  @param x1    x-coordinate of first point
+#  @param y1    y-coordinate of first point
+#  @param x2    x-coordinate of second point
+#  @param y2    y-coordinate of second point
+#  @return      Angle formed by x-axis and the line intersecting two input points.
 def angle_two_points(x1, y1, x2, y2):
-    return math.atan((y2-y1)/(x2-x1))
-
-# thymio = MyThymio(verbose = True)
-
-# while True:
-#     thymio.ser.set_var("motor.left.target", 50)
-#     thymio.ser.set_var("motor.right.target", 2**16-10)
-#     print(thymio.get_motor_left_speed())
-#     print(thymio.get_motor_right_speed())
-#     time.sleep(0.5)
-
-# # thymio.set_motor_speeds(50, 50)
-# thymio.ser.set_var("motor.left.target", 50)
-# time.sleep(4)
-# thymio.stop_thymio()    
-
-# th = connect_to_thymio()
-# for i in range(4):
-#     time.sleep(1)
-#     print(i)
-# th.set_var("motor.right.target", 50)
-# th.set_var("motor.left.target", 50)
-# time.sleep(3)
-# th.set_var("motor.right.target", 0)
-# th.set_var("motor.left.target", 0)
+    return math.atan2(-(y2-y1), x2-x1)

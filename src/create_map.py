@@ -16,10 +16,10 @@ from img_utils import *
 # ========================================================================== #
 
 ## Low threshold for red in HSV color space.
-RED_THR_HSV_LOW = (0, 110, 110)
+RED_THR_HSV_LOW = (0, 100, 100)
 
 ## High threshold for red in HSV color space.
-RED_THR_HSV_HIGH = (15, 255,255)
+RED_THR_HSV_HIGH = (5, 255,255)
 
 ## Raw image width in pixels.
 RAW_IMG_WIDTH = 800
@@ -113,7 +113,7 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
     if verbose:
         print("Image dimensions are {} x {}".format(width, height))
 
-    map_corners, found_pts = get_color_dots(img, RED_THR_HSV_LOW, RED_THR_HSV_HIGH, NUM_MAP_CORNERS)     
+    map_corners, found_pts = get_color_dots(img, RED_THR_HSV_LOW, RED_THR_HSV_HIGH, NUM_MAP_CORNERS, is_red = True)     
     if found_pts == False:
         return [], 0, 0, found_pts
     img_center = [0, 0]

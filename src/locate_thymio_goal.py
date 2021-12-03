@@ -7,14 +7,14 @@ from img_utils import get_color_dots
 
 #BGR2HSV gives value from 0 to 180 fro the first component
 
-GREEN_THR_HSV_HIGH = (60, 255, 255)
-GREEN_THR_HSV_LOW = (45, 110, 110)
+GREEN_THR_HSV_HIGH = (100, 180, 180)
+GREEN_THR_HSV_LOW = (35, 50, 70)
 
 BLUE_THR_HSV_HIGH = (100, 255, 255)
 BLUE_THR_HSV_LOW = (80, 110, 110)
 
-PURPLE_THR_HSV_HIGH = (145, 255, 255)
-PURPLE_THR_HSV_LOW = (125, 50, 50)
+PURPLE_THR_HSV_HIGH = (155, 150, 150)
+PURPLE_THR_HSV_LOW = (135, 50, 50)
 
 
 #thymio's rotaion point is blue, thymio's "direction point" is purple, goal is green;
@@ -41,7 +41,7 @@ def cartesian_to_grid(coords,map_size,grid_size):
 #  @return found_thymio  (bool) returns true if thymio was found, false otherwise
 def locate_thymio_camera(rectified_img,coord_type, grid_size):
 
-    thymio_rot_point, found_rot_point = get_color_dots(rectified_img, BLUE_THR_HSV_LOW, BLUE_THR_HSV_HIGH, 1)
+    thymio_rot_point, found_rot_point = get_color_dots(rectified_img, GREEN_THR_HSV_LOW, GREEN_THR_HSV_HIGH, 1)
     thymio_dir_point, found_dir_point = get_color_dots(rectified_img, PURPLE_THR_HSV_LOW, PURPLE_THR_HSV_HIGH, 1)
 
     if(found_rot_point and found_dir_point):
