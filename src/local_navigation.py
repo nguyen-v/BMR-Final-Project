@@ -82,17 +82,18 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
     y = np.zeros(2)
     while True:
         img, img_taken= take_picture(cam)
-        print(img_taken)
+        # print(img_taken)
         if img_taken:
             img_rect = get_rectified_img(img, M, rect_width,  rect_height)
-            # cv2.imshow('Window', img_rect)
-            # cv2.waitKey(1)
+            cv2.circle(img_rect, obj_pos, 4, (0, 0, 255), -1)
             thymio_pose, found_thymio = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
             if verbose:
                 print("Found thymio: {}".format(found_thymio))
                 print(thymio_pose)
             if found_thymio:
-                
+                angle = thymio_pose[2]
+                cv2.arrowedLine(img_rect, (int(thymio_pose[0]), int(thymio_pose[1])), (int(thymio_pose[0] + math.cos(angle)*50), int(thymio_pose[1] - math.sin(angle)*50)),
+                                (128, 0, 255), 3, tipLength = 0.3)
                 # Add memory terms
                 front_prox[NUM_PROX_VALUES] = y[0]/50
                 front_prox[NUM_PROX_VALUES+1] = y[1]/50
@@ -131,6 +132,8 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                     break
             else:
                 thymio.stop_thymio()
+            cv2.imshow('Local avoidance', img_rect)
+            cv2.waitKey(1)
     time.sleep(TS_LOCAL)
 
 
