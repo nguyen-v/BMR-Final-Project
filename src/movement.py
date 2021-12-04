@@ -47,6 +47,7 @@ BASE_RIGHT_MOTOR_SPEED = 100
 #  Exported functions.                                                       # 
 # ========================================================================== #
 
+
 def initialization():
     cam = init_camera()
     found_thymio = False
@@ -69,7 +70,7 @@ def thymio_move():
     thymio_path = []
     thymio = MyThymio()
     M, rect_map, map, map_enlarged, cam, rect_width, rect_height = initialization()
-    
+
     while not path_found:
         thymio_path, path_found = global_path(thymio, cam, map_enlarged, M, rect_width, rect_height, map_enlarged)  
 
