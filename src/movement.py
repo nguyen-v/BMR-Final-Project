@@ -19,6 +19,7 @@ from MyThymio import *
 from camera import *
 from local_navigation import *
 from utils import *
+from compute_global_path import *
 from Kalman import kalman_filter as KF
 
 # ========================================================================== #
@@ -64,16 +65,16 @@ def initialization():
     return M, rect_map, map, map_enlarged, cam, rect_width, rect_height
 
 def thymio_move():
-
     thymio = MyThymio()
     thymio_path = []
-    M, rect_map, map, map_enlarged, cam, img = initialization()
-    state == "localization"
-
+    path_found = 0
+    M, rect_map, map, map_enlarged, cam, rect_width, rect_height = initialization()
+    while not path_found:
+        thymio_path, path_found = global_path(thymio, cam, map_enlarged, M, rect_width, rect_height, map_enlarged)  
+    for cell in range(len(thymio_path)):
+        thymio_path[cell] = cell_to_xy(thymio_path[cell], MAP_WIDTH_CELL, MAP_HEIGHT_CELL, rect_width, rect_height)
     while True:
-        if state == "localization":
-            nodes = global_path(thymio_pos, goal_pos, map_enlarged, state)
-        elif state == "follow_path":
+        if  state == "follow_path":
             state = follow_path(thymio, cam, thymio_path, rect_map)
         elif state == "local_avoidance":
             local_avoidance(thymio, thymio_path, cam, M, rect_width, rect_height)
@@ -82,15 +83,25 @@ def thymio_move():
             thymio.stop_thymio()
             break
 
-def follow_path(thymio, cam, thymio_path, rect_map, state):
+def global_path(thymio, cam, M, rect_width, rect_height, map_enlarged):
+    img, ret_val = take_picture(cam)
+    if ret_val:
+        rect_map = get_rectified_img(img, M, rect_width, rect_height)
+        thymio_pos, found_thymio = locate_thymio_camera(rect_map, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        goal_pos, goal_found = locate_goal_camera(rect_map, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        thymio_pos = [thymio_pos[0], thymio_pos[1]]
+        if found_thymio:
+            thymio_path, path_found = A_Star(thymio_pos, goal_pos, occupancy_grid, map_enlarged)
+            return thymio_path, path_found
 
+def follow_path(thymio, cam, thymio_path, rect_map):
     dist = 0
     T_s = 0.1
     kalman = KF()
 
     while True:
-        est_dist = 0
 
+        est_dist = 0
         current_goal = thymio_path.pop(0)
         thymio_pos, theta_m, abs_v, v_m, found_thymio, found_obstacle = thymio.measurements(rect_map)
         last_angle = theta_m
@@ -123,6 +134,7 @@ def follow_path(thymio, cam, thymio_path, rect_map, state):
 
         thymio.rotate_thymio(-da)
         thymio.set_motor_speeds(BASE_LEFT_MOTOR_SPEED,BASE_RIGHT_MOTOR_SPEED)
+
         while dist >= est_dist:
             img, ret_val = take_picture(cam)
             if ret_val:
@@ -143,23 +155,25 @@ def follow_path(thymio, cam, thymio_path, rect_map, state):
                 if dT_s < 0:
                     dT_s = 0
                 time.sleep(dT_s)
+
         thymio.stop_thymio()
+
         if not thymio_path:
             break
         else:
             current_goal = thymio_path.pop(0)
 
-state = "localization"
-thymio = MyThymio(verbose = True)
-thymio.stop_thymio()
+# state = "localization"
+# thymio = MyThymio(verbose = True)
+# thymio.stop_thymio()
 
-M, rect_map, map, map_enlarged, cam, rect_width, rect_height = initialization()
-thymio_path = ([[200,200],[400,400]])
-current_goal = [200,200]
-image = cv2.circle(rect_map, [400,400], 10, [255,0,0],-1)
-cv2.imshow('Window', rect_map)
-cv2.waitKey(1)
-follow_path(thymio, cam, thymio_path, rect_map, state)
+# M, rect_map, map, map_enlarged, cam, rect_width, rect_height = initialization()
+# thymio_path = ([[200,200],[400,400]])
+# current_goal = [200,200]
+# image = cv2.circle(rect_map, [400,400], 10, [255,0,0],-1)
+# cv2.imshow('Window', rect_map)
+# cv2.waitKey(1)
+# follow_path(thymio, cam, thymio_path, rect_map, state)
 # last_angle = 0
 # img, ret_val = take_picture(cam)
 # if ret_val:

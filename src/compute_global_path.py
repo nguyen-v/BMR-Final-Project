@@ -22,6 +22,7 @@ def A_Star(start, goal, occupancy_grid):
     :param goal_m: goal node (x, y)
     :param occupancy_grid: the grid map
     :return: a tuple that contains the resulting path in data array indices (list of tuples)
+    :return: a boolean that indicates if a path was found
     """
 
     max_val_x, max_val_y = occupancy_grid.shape
@@ -76,7 +77,7 @@ def A_Star(start, goal, occupancy_grid):
 
         #If the goal is reached, reconstruct and return the obtained path
         if current == goal:
-            return reconstruct_path(cameFrom, current)
+            return reconstruct_path(cameFrom, current), True
         openSet.remove(current)
         closedSet.append(current)
         
@@ -103,4 +104,4 @@ def A_Star(start, goal, occupancy_grid):
                 
     # Open set is empty but goal was never reached
     print("No path found to goal")
-    return []
+    return [], False
