@@ -17,6 +17,18 @@ import matplotlib.pyplot as plt
 
 HSV_MAX_HUE = 180
 
+## Map corner marker IDs.
+MAP_CORNER_ID = [1, 2, 3, 4]
+
+## Thymio marker ID.
+THYMIO_ID = 5
+
+## Objective ID.
+OBJECTIVE_ID = 6
+
+## Default Aruco dictionary
+DEF_ARUCO_DICT = cv2.aruco.DICT_4X4_50
+
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #

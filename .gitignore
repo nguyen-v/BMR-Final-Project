@@ -19,4 +19,8 @@ src/__pycache__/camera.cpython-310.pyc
 src/__pycache__/create_map.cpython-310.pyc
 src/__pycache__/local_navigation.cpython-310.pyc
 src/__pycache__/locate_thymio_goal.cpython-310.pyc
+<<<<<<< HEAD
 >>>>>>> d51582c389f79e41f454fba06ca3ca05c4f67805
+=======
+src/__pycache__/generate_aruco_markers.cpython-310.pyc
+>>>>>>> 4bb96414309a3819dc38ce6bf96660464cc6a55b
