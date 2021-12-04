@@ -6,6 +6,12 @@
 #  Exported functions.                                                       # 
 # ========================================================================== #
 
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+
+
+
 ## Recurrently reconstructs the path from start node to the current node
 # @param    cameFrom                map (dictionary) containing for each node n the node immediately 
 #                                   preceding it on the cheapest path from start to n 
@@ -30,14 +36,17 @@ def reconstruct_path(cameFrom, current):
 # @return    path_found             a boolean that indicates if a path was found
 def A_Star(start, goal, occupancy_grid):
 
-    max_val_x, max_val_y = occupancy_grid.shape
-
+    max_val_y, max_val_x = occupancy_grid.shape
+    plt.figure()
+    plt.imshow(occupancy_grid, cmap='Greys',  interpolation='nearest')
+    plt.title("Rectified image")
+    plt.show()
     # Check if the start and goal are allowed points
     for point in [start, goal]:
         assert point[0] >= 0 and point[0] < max_val_x and point[1] >= 0 and point[1] < max_val_y , "start or end goal not contained in the map"
-    if occupancy_grid[start[0], start[1]]:
+    if occupancy_grid[start[1], start[0]]:
         raise Exception('Start node is not traversable')
-    if occupancy_grid[goal[0], goal[1]]:
+    if occupancy_grid[goal[1], goal[0]]:
         raise Exception('Goal node is not traversable')
     
     # Movements for 8-connectivity 
