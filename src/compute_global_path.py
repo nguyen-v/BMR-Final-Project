@@ -1,12 +1,18 @@
+## 
+# @file compute_global_path.py
+#
+# @brief Global navigation for Thymio.
+# ========================================================================== #
+#  Exported functions.                                                       # 
+# ========================================================================== #
+
+## Recurrently reconstructs the path from start node to the current node
+# @param    cameFrom                map (dictionary) containing for each node n the node immediately 
+#                                   preceding it on the cheapest path from start to n 
+#                                   currently known.
+# @param    current                 current node (x, y)
+# @return   total_path              list of nodes from start to current node
 def reconstruct_path(cameFrom, current):
-    """
-    Recurrently reconstructs the path from start node to the current node
-    :param cameFrom: map (dictionary) containing for each node n the node immediately 
-                     preceding it on the cheapest path from start to n 
-                     currently known.
-    :param current: current node (x, y)
-    :return: list of nodes from start to current node
-    """
     total_path = [current]
     while current in cameFrom.keys():
         # Add where the current node came from to the start of the list
@@ -14,16 +20,15 @@ def reconstruct_path(cameFrom, current):
         current=cameFrom[current]
     return total_path
 
+
+## A* for 2D occupancy grid. Finds a path from start to goal. h is the heuristic function.
+#                                   h(n) estimates the cost to reach goal from node n.
+# @param     start                  start node (x, y)
+# @param     goal_m                 goal node (x, y)
+# @param     occupancy_grid         the grid map
+# @return    thymio_path            a tuple that contains the resulting path in data array indices (list of tuples)
+# @return    path_found             a boolean that indicates if a path was found
 def A_Star(start, goal, occupancy_grid):
-    """
-    A* for 2D occupancy grid. Finds a path from start to goal.
-    h is the heuristic function. h(n) estimates the cost to reach goal from node n.
-    :param start: start node (x, y)
-    :param goal_m: goal node (x, y)
-    :param occupancy_grid: the grid map
-    :return: a tuple that contains the resulting path in data array indices (list of tuples)
-    :return: a boolean that indicates if a path was found
-    """
 
     max_val_x, max_val_y = occupancy_grid.shape
 

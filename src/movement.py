@@ -65,14 +65,17 @@ def initialization():
     return M, rect_map, map, map_enlarged, cam, rect_width, rect_height
 
 def thymio_move():
-    thymio = MyThymio()
-    thymio_path = []
     path_found = 0
+    thymio_path = []
+    thymio = MyThymio()
     M, rect_map, map, map_enlarged, cam, rect_width, rect_height = initialization()
+    
     while not path_found:
         thymio_path, path_found = global_path(thymio, cam, map_enlarged, M, rect_width, rect_height, map_enlarged)  
+
     for cell in range(len(thymio_path)):
         thymio_path[cell] = cell_to_xy(thymio_path[cell], MAP_WIDTH_CELL, MAP_HEIGHT_CELL, rect_width, rect_height)
+
     while True:
         if  state == "follow_path":
             state = follow_path(thymio, cam, thymio_path, rect_map)
@@ -100,7 +103,6 @@ def follow_path(thymio, cam, thymio_path, rect_map):
     kalman = KF()
 
     while True:
-
         est_dist = 0
         current_goal = thymio_path.pop(0)
         thymio_pos, theta_m, abs_v, v_m, found_thymio, found_obstacle = thymio.measurements(rect_map)
