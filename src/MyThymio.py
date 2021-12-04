@@ -4,7 +4,8 @@
 
 from thymio_connection import connect_to_thymio
 from locate_thymio_goal import locate_thymio_camera
-import create_map
+from create_map import *
+import math
 import time
 import numpy as np
 
@@ -26,6 +27,9 @@ BASE_SPEED = 100
 ROT_COEFF = 1.362   # for BASE_SPEED = 100
 # ROT_COEFF = 0.942   # for BASE_SPEED = 150
 
+# Proximity sensors threshold
+HORZ_PROX_THRESHOLD = [4000, 3000, 2000, 3000, 4000]
+
 # ========================================================================== #
 #  Classes.                                                                  # 
 # ========================================================================== #
@@ -45,23 +49,28 @@ class MyThymio():
 	#  @return abs_v 		The speeds of the thymio relative to the x and y axis.
 	#  @return v_m      	The speeds of the thymio's wheels
 	#  @return theta_m		The thymio's current orientation
-    def measurements(rect_map):
+    def measurements(self, rect_map):
         found_obstacle = False
+        
+        # prox_meas = self.get_prox_horizontal()
+        # for i in range(len(HORZ_PROX_THRESHOLD)):
+        #     if prox_meas[i] >= HORZ_PROX_THRESHOLD[i]:
+        #         found_obstacle = True
+        #         break
+
         thymio_pos, found_thymio = locate_thymio_camera(rect_map, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-        theta_m = thymio_pos[2]
-        thymio_pos = (thymio_pos[0], thymio_pos[1])
-        v_m = numpy.array([self.get_motor_left_speed(), self.get_motor_right_speed()])
-        abs_v = numpy.array([((vr_m + vl_m) / 2) * math.cos(theta_m),((vr_m + vl_m) / 2) * math.sin(theta_m)])  
-        prox_meas = self.get_prox_horizontal()
-        for i in range(len(HORZ_PROX_THRESHOLD)):
-            if prox_meas[i] >= HORZ_PROX_THRESHOLD[i]:
-                found_obstacle = True
-                break
         if found_thymio: # Function tells you if we can locate the thymio or not.
-            self.save_last_position(thymio_pos, theta_m)        
+            theta_m = thymio_pos[2]
+            print("thymio_found")
+            thymio_pos = (thymio_pos[0], thymio_pos[1])  
+            self.set_last_position(thymio_pos, theta_m)        
         else:
-            thymio_pos, theta_m = self.get_last_position()     
-        return thymio_pos, theta_m, abs_v, v_m, found_thymio, found_obstacle
+            thymio_pos= self.get_last_position()   
+            theta_m = self.get_last_angle() 
+
+        v_m = [self.get_motor_left_speed(), self.get_motor_right_speed()]
+        abs_v = [((v_m[0] + v_m[1]) / 2) * math.cos(theta_m),-((v_m[0] + v_m[1]) / 2) * math.sin(theta_m)]  # e_y points down
+        return thymio_pos, theta_m, abs_v, v_m, found_thymio, found_obstacle 
     
     ## Set motor right speed (positive or negative).
     #  @param       speed       Positive or negative speed value.
@@ -141,7 +150,10 @@ class MyThymio():
 	#  @return thymio_pos  The last position of the thymio.
 	#  @return theta_m     The last orientation of the thymio.
     def get_last_position(self):
-        return self.last_thymio_pos, self.last_theta_m
+        return self.last_thymio_pos
+
+    def get_last_angle(self):
+        return self.last_theta_m
 
     ## Returns raw horizontal proximity sensor values.
     #  @return prox_horizontal      Array of proximity sensor raw values.

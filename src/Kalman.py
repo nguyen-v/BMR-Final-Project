@@ -71,9 +71,9 @@ class kalman_filter():
 					[0, 1.0]])
 		
 		# Noise vector generation :
-		W = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
-		print(self.U_prev)
-		X_pred = A @ self.X_prev + B @ self.U_prev + W
+		#W = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
+		# print(self.U_prev)
+		X_pred = A @ self.X_prev + B @ self.U_prev
 
 		return X_pred, A, B
 
@@ -85,9 +85,9 @@ class kalman_filter():
 		C = np.identity(4)
 
 		# Noise vector generation :
-		V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
+		#V = 1e-2*np.diag([1.0, 1.0, 1.0, 1.0]) @ np.random.randn(4,1)
 
-		Y = np.array([[thymio_pos[0]], [thymio_pos[1]], [abs_v[0]], [abs_v[1]]]) + V
+		Y = np.array([[thymio_pos[0]], [thymio_pos[1]], [abs_v[0]], [abs_v[1]]])
 		#Y = sens.measurements() + V
 
 		return Y, C
@@ -96,7 +96,7 @@ class kalman_filter():
 	#  @return X_post		The à-posteriori estimates of the system's states.
 	def filter(self, thymio_pos, abs_v, new_T_s):
 		
-		update_sampling_time(new_T_s)
+		self.update_sampling_time(new_T_s)
 		X_pred, A, B = self.observation_model()
 		self.kalman_save_prediction(X_pred)
 
