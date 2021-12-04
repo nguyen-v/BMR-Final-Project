@@ -32,10 +32,10 @@ RAW_IMG_HEIGHT = 600
 NUM_MAP_CORNERS = 4
 
 ## Map width in number of cells.
-MAP_WIDTH_CELL = 19
+MAP_WIDTH_CELL = 33
 
 ## Map height in number of cells.
-MAP_HEIGHT_CELL = 13
+MAP_HEIGHT_CELL = 24
 
 ## Binary image conversion low threshold.
 BIN_THR_LOW = 128
@@ -54,7 +54,7 @@ BLACK = 0
 
 ## Defines how close to the 4 corners of a cell to look when checking for
 #  the presence of an obstacle (1 = check right up to the edge, 0 = check center).
-CHECK_CORNER_COEFF = 0.5
+CHECK_CORNER_COEFF = 0.3
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -75,13 +75,17 @@ def create_map(img, map_width, map_height, verbose = False):
     if success == False:
         return [], 0, 0, [], [], success
     img_rect = get_rectified_img(img, M, rect_width, rect_height)
+
+    # Remove aruco tags from image
+    img_rect = remove_aruco_tags(img_rect)
+
     # Convert to grayscale
     img_rect_gray = cv2.cvtColor(img_rect, cv2.COLOR_BGR2GRAY)
     # Convert to binary image
-    # (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY)
+    (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    # (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY)
 
-    map = np.ones((map_height, map_width))*WHITE
+    map = np.ones((map_height, map_width))*BLACK
     size_cell_px = rect_width/map_width
     d = int(size_cell_px/2*CHECK_CORNER_COEFF)
 
@@ -93,14 +97,35 @@ def create_map(img, map_width, map_height, verbose = False):
             # If the average is smaller than OBS_LUM_THR, it is considered black (obstacle)
             if (img_rect_bin[y+d][x+d]/4 + img_rect_bin[y+d][x-d]/4 + 
                 img_rect_bin[y-d][x+d]/4 + img_rect_bin[y-d][x-d]/4) < OBS_LUM_THR:
-                map[row, col] = BLACK
+                map[row, col] = WHITE
 
 
     # Dilate the map
     kernel = np.ones((3,3),np.uint8)
-    map_enlarged = cv2.erode(map,kernel,iterations = 1)
+    map_enlarged = cv2.dilate(map,kernel,iterations = 1)
 
     return M, rect_width, rect_height, map, map_enlarged, success
+
+
+def remove_aruco_tags(img_rect):
+    aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
+    aruco_params = cv2.aruco.DetectorParameters_create()
+    (corners, ids, rejected) = cv2.aruco.detectMarkers(img_rect, aruco_dict, parameters=aruco_params)
+    if len(corners) > 0:
+        for corner in corners:
+            # Extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
+            corners = corner.reshape((4, 2))
+            (top_left, top_right, bot_right, bot_left) = corners
+            # Convert each of the (x, y)-coordinate pairs to integers
+            top_right = (int(top_right[0]), int(top_right[1]))
+            bot_right = (int(bot_right[0]), int(bot_right[1]))
+            bot_left = (int(bot_left[0]), int(bot_left[1]))
+            top_left = (int(top_left[0]), int(top_left[1]))
+
+            # Draw a white square over aruco tags. This is to avoid having them detected as obstacles.
+            cv2.fillPoly(img_rect, pts = [np.array([top_left, top_right, bot_right, bot_left])], color = (WHITE,WHITE,WHITE))
+
+    return img_rect
 
 
 ## Returns a the warp transform matrix for image rectification, and map dimensions.
@@ -249,22 +274,22 @@ def get_rectified_img(img, M, rect_width, rect_height):
 def cell_to_xy(cell, map_width, map_height, rect_width, rect_height):
     return (int((rect_width/map_width)*(cell[1]+1/2)), int((rect_height/map_height)*(cell[0]+1/2)))
 
-# MAP INITIALIZATION EXAMPLE
-cam = init_camera()
-M, rect_width, rect_height, map, map_enlarged = init_map(cam)
-plt.figure()
-plt.imshow(map_enlarged, origin = 'lower')
-plt.title("Map enlarged")
-plt.gca().invert_yaxis()
-plt.figure()
-plt.imshow(map, origin = 'lower')
-plt.title("Original Map")
-plt.gca().invert_yaxis()
+# # MAP INITIALIZATION EXAMPLE
+# cam = init_camera()
+# M, rect_width, rect_height, map, map_enlarged = init_map(cam)
+# plt.figure()
+# plt.imshow(map_enlarged, origin = 'lower', cmap = 'Greys', interpolation = 'nearest')
+# plt.title("Map enlarged")
+# plt.gca().invert_yaxis()
+# plt.figure()
+# plt.imshow(map, origin = 'lower', cmap = 'Greys', interpolation = 'nearest')
+# plt.title("Original Map")
+# plt.gca().invert_yaxis()
 
-img, img_taken = take_picture(cam)
-if img_taken:
-    img_rect = get_rectified_img(img, M, rect_width, rect_height)
-    plt.figure()
-    plt.imshow(cv2.cvtColor(img_rect, cv2.COLOR_BGR2RGB))
-    plt.title("Rectified image")
-    plt.show()
+# img, img_taken = take_picture(cam)
+# if img_taken:
+#     img_rect = get_rectified_img(img, M, rect_width, rect_height)
+#     plt.figure()
+#     plt.imshow(cv2.cvtColor(img_rect, cv2.COLOR_BGR2RGB))
+#     plt.title("Rectified image")
+#     plt.show()
