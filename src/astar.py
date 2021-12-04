@@ -155,6 +155,11 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
     print("No path found to goal")
     return [], closedSet
 
+## Returns global path to goal
+#  @param   start       Start cell (line, colum).
+#  @param   goal        Goal cell (line column).
+#  @param   path        A list of cells [(line, column), (line, column), ...] defining the global path.
+#  @param   path_found  True if path is found, false if it is not.
 def get_global_path(map_enlarged, start, goal):
     occupancy_grid = map_enlarged
 
