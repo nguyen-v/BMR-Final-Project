@@ -24,7 +24,7 @@ BASE_SPEED = 100
 # BASE_SPEED = 150
 
 ## Rotation coefficient.
-ROT_COEFF = 1.362   # for BASE_SPEED = 100
+ROT_COEFF = 1.5   # for BASE_SPEED = 100
 # ROT_COEFF = 0.942   # for BASE_SPEED = 150
 
 # Proximity sensors threshold
