@@ -23,6 +23,7 @@ MAX_MOTOR_SPEED = 500
 BASE_SPEED = 100
 # BASE_SPEED = 150
 
+
 ## Rotation coefficient.
 ROT_COEFF = 1.5   # for BASE_SPEED = 100
 # ROT_COEFF = 0.942   # for BASE_SPEED = 150
@@ -51,7 +52,7 @@ class MyThymio():
 	#  @return theta_m		The thymio's current orientation
     def measurements(self, rect_map):
         found_obstacle = False
-        
+        found_thymio  = False
         # prox_meas = self.get_prox_horizontal()
         # for i in range(len(HORZ_PROX_THRESHOLD)):
         #     if prox_meas[i] >= HORZ_PROX_THRESHOLD[i]:
@@ -59,9 +60,10 @@ class MyThymio():
         #         break
 
         thymio_pos, found_thymio = locate_thymio_camera(rect_map, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        print(thymio_pos)
         if found_thymio: # Function tells you if we can locate the thymio or not.
+            found_thymio = False
             theta_m = thymio_pos[2]
-            print("thymio_found")
             thymio_pos = (thymio_pos[0], thymio_pos[1])  
             self.set_last_position(thymio_pos, theta_m)        
         else:
@@ -138,12 +140,21 @@ class MyThymio():
             self.set_motor_speeds(-BASE_SPEED, BASE_SPEED)
         time.sleep(abs(angle)*ROT_COEFF)
         self.stop_thymio()
+        final_angle = self.get_last_angle() - angle
+        if final_angle < -math.pi:
+            final_angle = final_angle + 2*math.pi
+        elif final_angle > math.pi:
+            final_angle = final_angle - 2*math.pi
+        self.set_last_angle(final_angle)
 
     ## Saves the last position, and orientation of the thymio .
 	#  @param thymio_pos  The last position of the thymio.
 	#  @param theta_m     The last orientation of the thymio.
     def set_last_position(self, thymio_pos, theta_m):
         self.last_thymio_pos = np.array([thymio_pos[0],thymio_pos[1]])
+        self.last_theta_m = theta_m
+    
+    def set_last_angle(self, theta_m):
         self.last_theta_m = theta_m
 
 	## Returns the last position and orientation of the thymio .
