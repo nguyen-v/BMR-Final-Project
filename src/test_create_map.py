@@ -14,7 +14,7 @@ while True:
         # cv2.waitKey(1)
         (corners, ids, rejected) = cv2.aruco.detectMarkers(img, aruco_dict, parameters=aruco_params)
         # verify *at least* one ArUco marker was detected
-        if len(corners) > 3:
+        if len(corners) > 2:
             # flatten the ArUco IDs list
             ids = ids.flatten()
             # loop over the detected ArUCo corners

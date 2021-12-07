@@ -44,7 +44,7 @@ BIN_THR_LOW = 128
 BIN_THR_HIGH = 255
 
 ## Map obstacle luminance threshold.
-OBS_LUM_THR = 100
+OBS_LUM_THR = 128
 
 ## Binary image max value (white).
 WHITE = 255
@@ -54,7 +54,7 @@ BLACK = 0
 
 ## Defines how close to the 4 corners of a cell to look when checking for
 #  the presence of an obstacle (1 = check right up to the edge, 0 = check center).
-CHECK_CORNER_COEFF = 0.3
+CHECK_CORNER_COEFF = 0.1
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -82,7 +82,12 @@ def create_map(img, map_width, map_height, verbose = False):
     # Convert to grayscale
     img_rect_gray = cv2.cvtColor(img_rect, cv2.COLOR_BGR2GRAY)
     # Convert to binary image
+    # Blur to reduce noise
+    img_rect_gray = cv2.GaussianBlur(img_rect_gray,(9,9),cv2.BORDER_DEFAULT)
     (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (4,4))
+    cv2.imshow('thr',img_rect_bin)
+    cv2.waitKey(0)
     # (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY)
 
     map = np.ones((map_height, map_width))*BLACK

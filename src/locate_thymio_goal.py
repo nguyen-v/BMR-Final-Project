@@ -1,6 +1,6 @@
 
 import math 
-import numpy as np
+import numpy as npu
 
 from img_utils import *
 
@@ -27,7 +27,7 @@ PURPLE_THR_HSV_LOW = (135, 50, 50)
 #  @param grid_size      size of the grid (nb_columns,nb_lines)
 #  @return grid_coords   pos in the grid
 def cartesian_to_grid(coords,map_size,grid_size):
-    grid_coords = (math.floor(coords[0]*grid_size[0]/map_size[0]),math.floor(coords[1]*grid_size[1]/map_size[1]))
+    grid_coords = (math.floor(coords[1]*grid_size[1]/map_size[1]),math.floor(coords[0]*grid_size[0]/map_size[0]))
     return grid_coords
 
 

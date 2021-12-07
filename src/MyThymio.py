@@ -5,6 +5,7 @@
 from thymio_connection import connect_to_thymio
 from locate_thymio_goal import locate_thymio_camera
 import time
+import math
 import numpy as np
 
 # ========================================================================== #
@@ -24,6 +25,9 @@ BASE_SPEED = 100
 ## Rotation coefficient.
 ROT_COEFF = 1.5   # for BASE_SPEED = 100
 # ROT_COEFF = 0.942   # for BASE_SPEED = 150
+
+## Speed conversion factor (raw values to px/s)
+SPEED_COEFF = 0.26
 
 # ========================================================================== #
 #  Classes.                                                                  # 
@@ -118,6 +122,15 @@ class MyThymio():
             self.set_motor_speeds(-BASE_SPEED, BASE_SPEED)
         time.sleep(abs(angle)*ROT_COEFF)
         self.stop_thymio()
+        # time.sleep(1)
+        final_angle = self.get_last_angle() - angle
+        if final_angle < -math.pi:
+            final_angle = final_angle + 2*math.pi
+        elif final_angle > math.pi:
+            final_angle = final_angle - 2*math.pi
+        print("angle {}".format(np.rad2deg(final_angle)))
+        # time.sleep(2)
+        self.set_last_angle(final_angle)
 
     ## Saves the last position, and orientation of the thymio .
 	#  @param thymio_pos  The last position of the thymio.
@@ -140,10 +153,15 @@ class MyThymio():
         except (KeyError, ValueError):
             pass
     
-    def get_gnd_sensors(self):
-        try:
-            return self.ser["prox.ground.reflected"]
-        except (KeyError, ValueError):
-            pass
+    # def get_gnd_sensors(self):
+    #     try:
+    #         return self.ser["prox.ground.reflected"]
+    #     except (KeyError, ValueError):
+    #         pass
 
+    def get_last_angle(self):
+        return self.last_theta_m
+
+    def set_last_angle(self, theta_m):
+        self.last_theta_m = theta_m
 
