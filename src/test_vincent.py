@@ -150,7 +150,7 @@ def main():
             th_obj_angle = math.atan2(-(next_node[1] - x_est[-1][1]), next_node[0] - x_est[-1][0])
             da = thymio_angle - th_obj_angle
 
-            if abs(da) > ANGLE_THRESHOLD:
+            if abs(da) > ANGLE_THRESHOLD and dist(path[0], x_est[-1][0:2]) > NODE_DIST_THR:
                 if da > 0:
                     if da < math.pi:
                         da = -da
@@ -226,7 +226,10 @@ def main():
                 if len(local_objective) == 0:
                     local_objective = path[-1]
                     path = [path[-1]]
-                cv2.destroyWindow('Rectified image')
+                try:
+                    cv2.destroyWindow('Rectified image')
+                except: # might raise error if this destroywindow is called before a window has been created
+                    pass
                 local_avoidance(thymio, local_objective, cam, M, rect_width, rect_height)
 
         cv2.imshow('Rectified image', img_rect) 

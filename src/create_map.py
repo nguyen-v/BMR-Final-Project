@@ -57,7 +57,7 @@ BLACK = 0
 CHECK_CORNER_COEFF = 0.1
 
 ## Dilation kernel.
-DILATION_KERNEL = np.ones((3,3),np.uint8)
+DILATION_KERNEL = np.ones((2,2),np.uint8)
 
 ## Number of dilation iterations.
 DILATION_ITER = 2
@@ -105,7 +105,7 @@ def create_map(img, map_width, map_height, verbose = False):
             # If the average is smaller than OBS_LUM_THR, it is considered black (obstacle)
             if (img_rect_bin[y+d][x+d]/4 + img_rect_bin[y+d][x-d]/4 + 
                 img_rect_bin[y-d][x+d]/4 + img_rect_bin[y-d][x-d]/4) < OBS_LUM_THR:
-                map[row, col] = WHITE
+                map[row-1, col-1] = WHITE
 
 
     # Dilate the map

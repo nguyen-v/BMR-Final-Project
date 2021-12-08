@@ -168,8 +168,6 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
 #  @return      path_found      True if path is found, false if it is not.
 def get_global_path(map_enlarged, start, goal):
     occupancy_grid = map_enlarged
-
-    cmap = colors.ListedColormap(['white', 'red']) # Select the colors with which to display obstacles and free cells
     # List of all coordinates in the grid
     x,y = np.mgrid[0:MAP_HEIGHT_CELL:1, 0:MAP_WIDTH_CELL:1]
     pos = np.empty(x.shape + (2,))
@@ -212,11 +210,11 @@ def lin_refine_implicit(x, n):
 
 
 def simplify_path(path, rect_height, rect_width, thymio_pos):
-    # Simplify path
-    path = rdp(path, epsilon=1)
+    # # Simplify path
+    # path = rdp(path, epsilon=0.5)
 
-    # Add intermediate points to path 
-    path = lin_refine_implicit(path, n=5)
+    # # Add intermediate points to path 
+    # path = lin_refine_implicit(path, n=5)
 
     # Convert path to a list of (x, y) positions
     path_temp = path + 1/2
@@ -232,7 +230,6 @@ def simplify_path(path, rect_height, rect_width, thymio_pos):
 
 def init_path(cam, thymio, clear_start_node = False):
     M, rect_width, rect_height, map, map_enlarged = init_map(cam)
-
     img, img_taken = take_picture(cam)
 
     found_path = False
@@ -265,7 +262,6 @@ def init_path(cam, thymio, clear_start_node = False):
         obj_pos_grid = cartesian_to_grid(obj_pos, (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
         if clear_start_node == True: # this option is useful when recalculating path because thyimo might be close to an obstacle
             map_enlarged[thymio_pos_grid[0]][thymio_pos_grid[1]] = 0
-            print(thymio_pos_grid)
         path, found_path = get_global_path(map_enlarged, thymio_pos_grid, obj_pos_grid)
         if not found_path:
             time.sleep(1)
