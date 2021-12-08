@@ -1,6 +1,7 @@
 import numpy as np
 from rdp import rdp
 import matplotlib.pyplot as plt
+from MyThymio import *
 
 def lin_refine_implicit(x, n):
     """
@@ -23,7 +24,9 @@ def lin_refine_implicit(x, n):
     else:
         raise ValueError
 
-path = np.array([[0, 0], [0, 50], [1, 100], [0, 150], [0, 200], [50, 200], [100, 250], [150, 300], [200, 250], [250, 200], [300, 150]])
+# path = np.array([[0, 0], [0, 50], [1, 100], [0, 150], [0, 200], [50, 200], [100, 250], [150, 300], [200, 250], [250, 200], [300, 150]])
+# print(path)
+# path = np.delete(path, np.arange(3), 0)
 # print(path)
 # # x, y = path.T
 # plt.figure()
@@ -89,8 +92,11 @@ path = np.array([[0, 0], [0, 50], [1, 100], [0, 150], [0, 200], [50, 200], [100,
 #     print(x[0])
 #     print(x[1])
 
-x_est = [np.array([1, 2]), np.array([3, 4])]
-new_x_est = np.array([5, 7])
-print(new_x_est)
-x_est.append(new_x_est)
-print(x_est[-1])
+# x_est = [np.array([1, 2]), np.array([3, 4])]
+# new_x_est = np.array([5, 7])
+# print(new_x_est)
+# x_est.append(new_x_est)
+# print(x_est[-1])
+thymio = MyThymio(verbose = True)
+while True:
+    print(thymio.get_prox_horizontal())

@@ -10,6 +10,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 # ========================================================================== #
 #  Global constants.                                                         # 
@@ -32,6 +33,8 @@ DEF_ARUCO_DICT = cv2.aruco.DICT_4X4_50
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #
+
+
 
 ## Returns a list of (x, y) positions of dots that satisfy the low and
 #  high HSV thresholds. Number of points to return can be specified.
@@ -88,3 +91,6 @@ def get_color_dots(img, HSV_THR_LOW, HSV_THR_HIGH, exp_num_pts = None, is_red = 
         else:
             return [], False
     return dots, True
+
+def dist(a, b):
+    return math.sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)

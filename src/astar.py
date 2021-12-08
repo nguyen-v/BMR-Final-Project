@@ -2,8 +2,13 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import numpy as np
 import math
-import os
 from create_map import *
+from locate_thymio_goal import *
+from rdp import rdp
+from img_utils import *
+
+## All nodes on the path that are within this range of initial position of Thymio are ignored
+NODE_DIST_THR = 50
 
 def _get_movements_4n():
     """
@@ -184,30 +189,91 @@ def get_global_path(map_enlarged, start, goal):
     visitedNodes = np.array(visitedNodes)
     return path, True
 
+def lin_refine_implicit(x, n):
+    """
+    Given a 2D ndarray (npt, m) of npt coordinates in m dimension, insert 2**(n-1) additional points on each trajectory segment
+    Returns an (npt*2**(n-1), m) ndarray
+    """
+    if n > 1:
+        m = 0.5*(x[:-1] + x[1:])
+        if x.ndim == 2:
+            msize = (x.shape[0] + m.shape[0], x.shape[1])
+        else:
+            raise NotImplementedError
 
-# # Initialize map
-# M, rect_width, rect_height, map, map_enlarged, success = create_map(img, 11, 7, verbose = True)
-# if success:
-#     plt.figure()
-#     plt.imshow(map_enlarged, origin = 'lower', cmap = 'Greys', interpolation = 'nearest')
-#     plt.gca().invert_yaxis()
-#     plt.figure()
-#     plt.imshow(map, origin = 'lower', cmap = 'Greys', interpolation = 'nearest')
-#     plt.gca().invert_yaxis()
-#     # We can now get the rectified image using the warp transform matrix
-#     # Separating the processes allow us to recalculate quickly the rectified map
-#     # without having to recalculate the warp transform matrix (assuming fixed camera).
-#     img_rect = get_rectified_img(img, M, rect_width, rect_height)
-#     # cv2.imshow("Mask", img_rect)
-#     # cv2.waitKey(0)
-#     plt.show()
-# else:
-#     print("Map was not successfully computed.") 
+        x_new = np.empty(msize, dtype=np.float64)
+        x_new[0::2] = x
+        x_new[1::2] = m
+        return lin_refine_implicit(x_new, n-1)
+    elif n == 1:
+        return x
+    else:
+        raise ValueError
 
-# start = (6, 0)
-# goal = (3, 10)
-# path, found_path = get_global_path(map_enlarged, start, goal)
-# if found_path:
-#     print(path)
-# else:
-#     print("path not found")
+
+def simplify_path(path, rect_height, rect_width, thymio_pos):
+    # Simplify path
+    path = rdp(path, epsilon=1)
+
+    # Add intermediate points to path 
+    path = lin_refine_implicit(path, n=5)
+
+    # Convert path to a list of (x, y) positions
+    path_temp = path + 1/2
+    path[:, 0] = path_temp[:, 1]*(rect_height/MAP_HEIGHT_CELL)
+    path[:, 1] = path_temp[:, 0]*(rect_width/MAP_WIDTH_CELL)
+
+    # Delete first nodes if too close to Thymio
+    for idx, node in enumerate(path):
+        if dist(node, thymio_pos[0:2]) < NODE_DIST_THR:
+            path = np.delete(path, idx, 0)
+    return path
+
+
+def init_path(cam, thymio, clear_start_node = False):
+    M, rect_width, rect_height, map, map_enlarged = init_map(cam)
+
+    img, img_taken = take_picture(cam)
+
+    found_path = False
+    thymio_pos = []
+    obj_pos = []
+    path = []
+    while not found_path:
+        # Find Thymio
+        thymio_found = False
+        while not thymio_found:
+            img, img_taken = take_picture(cam)
+            if img_taken:
+                img_rect = get_rectified_img(img, M, rect_width, rect_height)
+                thymio_pos, thymio_found = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        thymio.set_last_angle(thymio_pos[2])
+        print("Thymio found.")
+
+        # Find objective
+        obj_found = False
+        while not obj_found:
+            img, img_taken = take_picture(cam)
+            if img_taken:
+                img_rect = get_rectified_img(img, M, rect_width, rect_height)
+                obj_pos, obj_found = locate_goal_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+
+        print("Objective found")
+        # Compute global path to objective
+        print("Computing global path")
+        thymio_pos_grid = cartesian_to_grid(thymio_pos[0:2], (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        obj_pos_grid = cartesian_to_grid(obj_pos, (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+        if clear_start_node == True: # this option is useful when recalculating path because thyimo might be close to an obstacle
+            map_enlarged[thymio_pos_grid[0]][thymio_pos_grid[1]] = 0
+            print(thymio_pos_grid)
+        path, found_path = get_global_path(map_enlarged, thymio_pos_grid, obj_pos_grid)
+        if not found_path:
+            time.sleep(1)
+            M, rect_width, rect_height, map, map_enlarged = init_map(cam)
+            plt.figure()
+            plt.imshow(map_enlarged, origin = 'lower', cmap = 'Greys', interpolation = 'nearest')
+            plt.title("Original Map")
+            plt.gca().invert_yaxis()
+            plt.show()
+    path = simplify_path(path, rect_height, rect_width, thymio_pos)
+    return path, thymio_pos, obj_pos

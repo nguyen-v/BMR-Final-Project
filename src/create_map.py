@@ -56,6 +56,12 @@ BLACK = 0
 #  the presence of an obstacle (1 = check right up to the edge, 0 = check center).
 CHECK_CORNER_COEFF = 0.1
 
+## Dilation kernel.
+DILATION_KERNEL = np.ones((3,3),np.uint8)
+
+## Number of dilation iterations.
+DILATION_ITER = 2
+
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #
@@ -86,9 +92,6 @@ def create_map(img, map_width, map_height, verbose = False):
     img_rect_gray = cv2.GaussianBlur(img_rect_gray,(9,9),cv2.BORDER_DEFAULT)
     (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (4,4))
-    cv2.imshow('thr',img_rect_bin)
-    cv2.waitKey(0)
-    # (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY)
 
     map = np.ones((map_height, map_width))*BLACK
     size_cell_px = rect_width/map_width
@@ -106,8 +109,7 @@ def create_map(img, map_width, map_height, verbose = False):
 
 
     # Dilate the map
-    kernel = np.ones((3,3),np.uint8)
-    map_enlarged = cv2.dilate(map,kernel,iterations = 1)
+    map_enlarged = cv2.dilate(map, DILATION_KERNEL, iterations = DILATION_ITER)
 
     return M, rect_width, rect_height, map, map_enlarged, success
 
