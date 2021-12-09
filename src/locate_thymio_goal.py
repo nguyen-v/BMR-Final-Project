@@ -102,22 +102,7 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
 #  @return      found_goal      (bool) returns true if goal was found, false otherwise 
 #  @note                        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def locate_goal_camera(rectified_img,coord_type, grid_size):
-<<<<<<< HEAD
     
-    goal_coords, found_goal = get_color_dots(rectified_img, GREEN_THR_HSV_LOW, GREEN_THR_HSV_HIGH, 1)
-    
-    if(found_goal):
-        goal_coords = goal_coords[0]
-        if(coord_type == 'cartesian'):
-            return goal_coords, True
-        else:
-            map_size = (np.size(rectified_img, 1),np.size(rectified_img, 0))
-            goal_coords  = cartesian_to_grid(goal_coords,map_size,grid_size)
-            return goal_coords, True   
-    else:
-        return [], False 
-=======
-
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
     (corners, ids, rejected) = cv2.aruco.detectMarkers(rectified_img, aruco_dict, parameters=aruco_params)
@@ -151,6 +136,5 @@ def locate_goal_camera(rectified_img,coord_type, grid_size):
                     obj_pos  = cartesian_to_grid((cX, cY), map_size, grid_size)
                     return obj_pos, True           
     return [], False
->>>>>>> master
 
     
