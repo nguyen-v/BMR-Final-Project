@@ -16,7 +16,7 @@ import os
 
 ## Path to file where camera images can be stored.
 dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, '../img/camera_shot.jpg')
+dirname = os.path.join(dirname, '../img/cam/')
 
 ## Camera feed width in pixels.
 IMAGE_WIDTH = 800
@@ -51,5 +51,12 @@ def take_picture(cam):
 
 ## Saves a picture.
 #  @param   img     Image to save.
-def save_camera_img(img):
-    cv2.imwrite(filename, img)
+def save_camera_img(img, filename):
+    cv2.imwrite(dirname + filename + ".png", img)
+
+cam = init_camera()
+
+img_taken = False
+while not img_taken:
+    img_normal, img_taken = take_picture(cam)
+save_camera_img(img_normal, "img_normal")
