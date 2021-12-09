@@ -1,31 +1,51 @@
+## 
+# @file global_path_planning.py
+#
+# @brief Definition functions for computing the global path to objective.
+
+# ========================================================================== #
+#  Imports.                                                                  # 
+# ========================================================================== #
+
 import matplotlib.pyplot as plt
-from matplotlib import colors
 import numpy as np
 import math
+import time
+from rdp import rdp
+
+## Custom modules
 from create_map import *
 from locate_thymio_goal import *
-from rdp import rdp
 from img_utils import *
+
+# ========================================================================== #
+#  Global constants.                                                         # 
+# ========================================================================== #
 
 ## All nodes on the path that are within this range of initial position of Thymio are ignored
 NODE_DIST_THR = 50
 
+# ========================================================================== #
+#  Exported functions.                                                       # 
+# ========================================================================== #
+
+## Get all possible 4-connectivity movements (up, down, left right).
+#  @return      list of movements with cost [(dx, dy, movement_cost)].
+#  @note        Code from Solutions of Exercise Session 5.
 def _get_movements_4n():
-    """
-    Get all possible 4-connectivity movements (up, down, left right).
-    :return: list of movements with cost [(dx, dy, movement_cost)]
-    """
+    
     return [(1, 0, 1.0),
             (0, 1, 1.0),
             (-1, 0, 1.0),
             (0, -1, 1.0)]
 
+
+## Get all possible 8-connectivity movements. Equivalent to get_movements_in_radius(1).
+#  (up, down, left, right and the 4 diagonals).
+#  @return      list of movements with cost [(dx, dy, movement_cost)].
+#  @note        Code from Solutions of Exercise Session 5.
 def _get_movements_8n():
-    """
-    Get all possible 8-connectivity movements. Equivalent to get_movements_in_radius(1)
-    (up, down, left, right and the 4 diagonals).
-    :return: list of movements with cost [(dx, dy, movement_cost)]
-    """
+
     s2 = math.sqrt(2)
     return [(1, 0, 1.0),
             (0, 1, 1.0),
@@ -37,16 +57,14 @@ def _get_movements_8n():
             (1, -1, s2)]
 
 
-
+## Recurrently reconstructs the path from start node to the current node.
+#  @param   cameFrom    map (dictionary) containing for each node n the node immediately .
+#                       preceding it on the cheapest path from start to n currently known.
+#  @param   current     current node (x, y).
+#  @return              list of nodes from start to current node.
+#  @note                Code from Solutions of Exercise Session 5.
 def reconstruct_path(cameFrom, current):
-    """
-    Recurrently reconstructs the path from start node to the current node
-    :param cameFrom: map (dictionary) containing for each node n the node immediately 
-                     preceding it on the cheapest path from start to n 
-                     currently known.
-    :param current: current node (x, y)
-    :return: list of nodes from start to current node
-    """
+
     total_path = [current]
     while current in cameFrom.keys():
         # Add where the current node came from to the start of the list
@@ -54,20 +72,14 @@ def reconstruct_path(cameFrom, current):
         current=cameFrom[current]
     return total_path
 
+## A* for 2D occupancy grid. Finds a path from start to goal. h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+#  @param   start               start node (x, y).
+#  @param   goal_m              goal node (x, y).
+#  @param   occupancy_grid      the grid map.
+#  @param   movement            select between 4-connectivity ('4N') and 8-connectivity ('8N', default).
+#  @return                      a tuple that contains: (the resulting path in meters, the resulting path in data array indices).
+#  @note                        Adapted from code from Solutions of Exercise Session 5.
 def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width = MAP_WIDTH_CELL, map_height = MAP_HEIGHT_CELL):
-    """
-    A* for 2D occupancy grid. Finds a path from start to goal.
-    h is the heuristic function. h(n) estimates the cost to reach goal from node n.
-    :param start: start node (x, y)
-    :param goal_m: goal node (x, y)
-    :param occupancy_grid: the grid map
-    :param movement: select between 4-connectivity ('4N') and 8-connectivity ('8N', default)
-    :return: a tuple that contains: (the resulting path in meters, the resulting path in data array indices)
-    """
-    
-    # -----------------------------------------
-    # DO NOT EDIT THIS PORTION OF CODE
-    # -----------------------------------------
     
     # Check if the start and goal are within the boundaries of the map
     for point in [start, goal]:
@@ -94,7 +106,7 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
         raise ValueError('Unknown movement')
     
     # --------------------------------------------------------------------------------------------
-    # A* Algorithm implementation - feel free to change the structure / use another pseudo-code
+    # A* Algorithm implementation
     # --------------------------------------------------------------------------------------------
     
     # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
@@ -160,6 +172,7 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
     print("No path found to goal")
     return [], closedSet
 
+
 ## Returns global path to goal
 #  @param       map_enlarged    Enlarged map (cells).
 #  @param       start           Start cell (line, colum).
@@ -167,6 +180,7 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
 #  @return      path            A list of cells [(line, column), (line, column), ...] defining the global path.
 #  @return      path_found      True if path is found, false if it is not.
 def get_global_path(map_enlarged, start, goal):
+
     occupancy_grid = map_enlarged
     # List of all coordinates in the grid
     x,y = np.mgrid[0:MAP_HEIGHT_CELL:1, 0:MAP_WIDTH_CELL:1]
@@ -187,11 +201,14 @@ def get_global_path(map_enlarged, start, goal):
     visitedNodes = np.array(visitedNodes)
     return path, True
 
+## Given a 2D ndarray (npt, m) of npt coordinates in m dimension, insert 2**(n-1) additional points on each trajectory segment
+#  Returns an (npt*2**(n-1), m) ndarray
+#  @param   x           Input trajectory.
+#  @param   n           Subdivision parameter.
+#  @return              Output trajectory with intermediate points.
+#  @note    source:     https://coderedirect.com/questions/288098/higher-order-local-interpolation-of-implicit-curves-in-python
 def lin_refine_implicit(x, n):
-    """
-    Given a 2D ndarray (npt, m) of npt coordinates in m dimension, insert 2**(n-1) additional points on each trajectory segment
-    Returns an (npt*2**(n-1), m) ndarray
-    """
+
     if n > 1:
         m = 0.5*(x[:-1] + x[1:])
         if x.ndim == 2:
@@ -208,13 +225,18 @@ def lin_refine_implicit(x, n):
     else:
         raise ValueError
 
-
+## Simplifies the path, converts path to xy coordinates and adds intermediate points between nodes.
+#  @param   path            Input trajectory (list of cells).
+#  @param   rect_height     Rectified image height (pixels).
+#  @param   rect_width      Rectified image width (pixels).
+#  @return                  Simplified path (list of xy coordinates).
 def simplify_path(path, rect_height, rect_width, thymio_pos):
-    # # Simplify path
-    # path = rdp(path, epsilon=0.5)
 
-    # # Add intermediate points to path 
-    # path = lin_refine_implicit(path, n=5)
+    # Simplify path
+    path = rdp(path, epsilon=0.5)
+
+    # Add intermediate points to path 
+    path = lin_refine_implicit(path, n=5)
 
     # Convert path to a list of (x, y) positions
     path_temp = path + 1/2
@@ -227,8 +249,16 @@ def simplify_path(path, rect_height, rect_width, thymio_pos):
             path = np.delete(path, idx, 0)
     return path
 
+## Initializes the path.
+#  @param   cam                 Camera capture instance.
+#  @param   thymio              MyThymio class instance.
+#  @param   clear_start_node    Set to True to consider start node as free cell.
+#  @param   use_last_pos        Set to True to use last Thymio position if camera is obstructed.
+#  @return  path                Global path to leading to global objective (list of xy coordinates).
+#  @return  thymio_pos          (x, y, theta) of Thymio.
+#  @return  obj_pos             Objective xy coordinates.
+def init_path(cam, thymio, clear_start_node = False, use_last_pos = False):
 
-def init_path(cam, thymio, clear_start_node = False):
     M, rect_width, rect_height, map, map_enlarged = init_map(cam)
     img, img_taken = take_picture(cam)
 
@@ -236,6 +266,7 @@ def init_path(cam, thymio, clear_start_node = False):
     thymio_pos = []
     obj_pos = []
     path = []
+
     while not found_path:
         # Find Thymio
         thymio_found = False
@@ -244,6 +275,9 @@ def init_path(cam, thymio, clear_start_node = False):
             if img_taken:
                 img_rect = get_rectified_img(img, M, rect_width, rect_height)
                 thymio_pos, thymio_found = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+                if (not thymio_found) and (use_last_pos == True):
+                    thymio_pos = thymio.get_last_position()
+                    break
         thymio.set_last_angle(thymio_pos[2])
         print("Thymio found.")
 
@@ -254,15 +288,17 @@ def init_path(cam, thymio, clear_start_node = False):
             if img_taken:
                 img_rect = get_rectified_img(img, M, rect_width, rect_height)
                 obj_pos, obj_found = locate_goal_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-
         print("Objective found")
+
         # Compute global path to objective
         print("Computing global path")
         thymio_pos_grid = cartesian_to_grid(thymio_pos[0:2], (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
         obj_pos_grid = cartesian_to_grid(obj_pos, (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+
         if clear_start_node == True: # this option is useful when recalculating path because thyimo might be close to an obstacle
             map_enlarged[thymio_pos_grid[0]][thymio_pos_grid[1]] = 0
         path, found_path = get_global_path(map_enlarged, thymio_pos_grid, obj_pos_grid)
+
         if not found_path:
             time.sleep(1)
             M, rect_width, rect_height, map, map_enlarged = init_map(cam)
@@ -271,5 +307,7 @@ def init_path(cam, thymio, clear_start_node = False):
             plt.title("Original Map")
             plt.gca().invert_yaxis()
             plt.show()
+
     path = simplify_path(path, rect_height, rect_width, thymio_pos)
+
     return path, thymio_pos, obj_pos

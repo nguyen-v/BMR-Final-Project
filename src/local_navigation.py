@@ -7,15 +7,17 @@
 #  Imports.                                                                  # 
 # ========================================================================== #
 
+import math
+import cv2
+import numpy as np
+
+## Custom modules
+from img_utils import angle_two_points
 from MyThymio import *
 from locate_thymio_goal import *
 from thymio_connection import *
 from camera import *
 from create_map import *
-import math
-
-import cv2
-import numpy as np
 
 # ========================================================================== #
 #  Global constants.                                                         # 
@@ -119,13 +121,6 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                 y[0] = y[0] + OBJ_ATT_BASE + da/math.pi*OBJ_ATT_COEFF
                 y[1] = y[1] + OBJ_ATT_BASE - da/math.pi*OBJ_ATT_COEFF
 
-                # # Map obstacles contribution (repulsive)
-                # gnd_sens = np.divide(thymio.get_gnd_sensors(), GND_SCALE)
-                # we have to put a threshold on ground sensors if global obstacles have no gradient
-                # for i in range(NUM_GND_SENS):
-                #     y[0] = y[0] + gnd_sens[i] * WEIGHTS_LEFT_GND[i]
-                #     y[1] = y[1] + gnd_sens[i] * WEIGHTS_RIGHT_GND[i]
-
                 thymio.set_motor_left_speed(int(y[0]/MOTOR_SCALE))
                 thymio.set_motor_right_speed(int(y[1]/MOTOR_SCALE))
                 if math.dist([thymio_pose[0], thymio_pose[1]], [obj_pos[0], obj_pos[1]]) < LOC_DIST_THR:
@@ -140,13 +135,3 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
             cv2.imshow('Rectified image', img_rect)
             cv2.waitKey(1)
         time.sleep(TS_LOCAL)
-
-
-## Calculates the angle formed by x-axis and the line intersecting two input points.
-#  @param x1    x-coordinate of first point
-#  @param y1    y-coordinate of first point
-#  @param x2    x-coordinate of second point
-#  @param y2    y-coordinate of second point
-#  @return      Angle formed by x-axis and the line intersecting two input points.
-def angle_two_points(x1, y1, x2, y2):
-    return math.atan2(-(y2-y1), x2-x1)

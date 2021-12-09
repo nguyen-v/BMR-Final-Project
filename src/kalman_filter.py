@@ -9,6 +9,7 @@
 
 import numpy as np
 import math
+
 # ========================================================================== #
 #  Global constants.                                                         # 
 # ========================================================================== #
@@ -58,4 +59,4 @@ def kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est_prev, P_est_prev, dvx 
     x_est = x_est_a_priori + K @ i
     P_est = P_est_a_priori - K @ (H @ P_est_a_priori)
 
-    return x_est, P_est, x_est_a_priori
+    return x_est, P_est

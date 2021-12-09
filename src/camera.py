@@ -8,52 +8,48 @@
 # ========================================================================== #
 
 import cv2
-import time
 import os
 
 # ========================================================================== #
 #  Global constants.                                                         # 
 # ========================================================================== #
 
+## Path to file where camera images can be stored.
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, '../img/camera_shot.jpg')
 
-img_ready = False
+## Camera feed width in pixels.
+IMAGE_WIDTH = 800
 
-MAP_WIDTH = 640
-
-MAP_LENGTH = 480
+## Camera feed height in pixels.
+IMAGE_HEIGHT = 600
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
 # ========================================================================== #
 
-def init_camera(width = MAP_WIDTH, height = MAP_LENGTH):
+## Initializes the camera.
+#  @param   IMAGE_WIDTH     Desired camera feed image width.
+#  @param   IMAGE_HEIGHT    Desired camera feed image height.
+#  @return  cam             Camera instance.
+def init_camera(width = IMAGE_WIDTH, height = IMAGE_HEIGHT):
     cam=cv2.VideoCapture(0 + cv2.CAP_DSHOW)
     cam.set(3,width)
     cam.set(4,height)
     return cam
 
-def take_picture(cam, video = 0):
-        ret_val,img = cam.read()
-        # print("ret_val : {}, is_opened : {}.".format(ret_val,cam.isOpened()))
-        if ret_val:
-            # cv2.imshow('Window', img)
-            # cv2.waitKey(1)
-            # save_camera_img(img)   
-            return img, ret_val
+## Returns a picture from camera.
+#  @param   cam         Camera instance.
+#  @return  img         Image from camera.
+#  @return  img_taken   True if image was successfully taken.
+def take_picture(cam):
+        img_taken ,img = cam.read()
+        if img_taken: 
+            return img, img_taken
         else:
-            return [], ret_val
-                
-def img_ready():
-    global img_ready 
-    img_ready = True
+            return [], img_taken
 
+## Saves a picture.
+#  @param   img     Image to save.
 def save_camera_img(img):
     cv2.imwrite(filename, img)
-
-
-# Easy implementation of camera
-#cam = init_camera()
-#while True:
-    #img = take_picture(cam)

@@ -16,18 +16,6 @@ from camera import *
 #  Global constants.                                                         # 
 # ========================================================================== #
 
-## Low threshold for red in HSV color space.
-RED_THR_HSV_LOW = (0, 100, 100)
-
-## High threshold for red in HSV color space.
-RED_THR_HSV_HIGH = (5, 255,255)
-
-## Raw image width in pixels.
-RAW_IMG_WIDTH = 800
-
-## Raw image height in pixels.
-RAW_IMG_HEIGHT = 600
-
 ## Number of corners for the map boundary.
 NUM_MAP_CORNERS = 4
 
@@ -49,8 +37,11 @@ OBS_LUM_THR = 128
 ## Binary image max value (white).
 WHITE = 255
 
-## Binary image min value (black).
-BLACK = 0
+## Obstacle luminance value.
+OBSTACLE = 255
+
+## No obstacle luminance value.
+NO_OBSTACLE = 0
 
 ## Defines how close to the 4 corners of a cell to look when checking for
 #  the presence of an obstacle (1 = check right up to the edge, 0 = check center).
@@ -61,6 +52,9 @@ DILATION_KERNEL = np.ones((2,2),np.uint8)
 
 ## Number of dilation iterations.
 DILATION_ITER = 2
+
+## Map corner marker IDs.
+MAP_CORNER_ID = [1, 2, 3, 4]
 
 # ========================================================================== #
 #  Exported functions.                                                       # 
@@ -93,7 +87,7 @@ def create_map(img, map_width, map_height, verbose = False):
     (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (4,4))
 
-    map = np.ones((map_height, map_width))*BLACK
+    map = np.ones((map_height, map_width))*NO_OBSTACLE
     size_cell_px = rect_width/map_width
     d = int(size_cell_px/2*CHECK_CORNER_COEFF)
 
@@ -105,7 +99,7 @@ def create_map(img, map_width, map_height, verbose = False):
             # If the average is smaller than OBS_LUM_THR, it is considered black (obstacle)
             if (img_rect_bin[y+d][x+d]/4 + img_rect_bin[y+d][x-d]/4 + 
                 img_rect_bin[y-d][x+d]/4 + img_rect_bin[y-d][x-d]/4) < OBS_LUM_THR:
-                map[row-1, col-1] = WHITE
+                map[row-1, col-1] = OBSTACLE
 
 
     # Dilate the map
@@ -113,7 +107,9 @@ def create_map(img, map_width, map_height, verbose = False):
 
     return M, rect_width, rect_height, map, map_enlarged, success
 
-
+## Removes aruco tags from input picture.
+#  @param   img_rect    Input rectified image.
+#  @return              Rectified image with white squares over aruco tags.
 def remove_aruco_tags(img_rect):
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
@@ -159,12 +155,12 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
     rect_width = 0 
     rect_height = 0
     # We want to have the final image bounded by the initial image dimensions
-    if (map_width/map_height > RAW_IMG_WIDTH/RAW_IMG_HEIGHT):
-        rect_width = RAW_IMG_WIDTH
-        rect_height = int(map_height*RAW_IMG_WIDTH/map_width)
-    elif (map_width/map_height <= RAW_IMG_WIDTH/RAW_IMG_HEIGHT):
-        rect_width = int(map_width*RAW_IMG_HEIGHT/map_height)
-        rect_height = RAW_IMG_HEIGHT
+    if (map_width/map_height > IMAGE_WIDTH/IMAGE_HEIGHT):
+        rect_width = IMAGE_WIDTH
+        rect_height = int(map_height*IMAGE_WIDTH/map_width)
+    elif (map_width/map_height <= IMAGE_WIDTH/IMAGE_HEIGHT):
+        rect_width = int(map_width*IMAGE_HEIGHT/map_height)
+        rect_height = IMAGE_HEIGHT
     
     if verbose:
         print("Rectified image dimensions are {} x {}".format(rect_width, rect_height))
@@ -281,7 +277,9 @@ def get_rectified_img(img, M, rect_width, rect_height):
 def cell_to_xy(cell, map_width, map_height, rect_width, rect_height):
     return (int((rect_width/map_width)*(cell[1]+1/2)), int((rect_height/map_height)*(cell[0]+1/2)))
 
-# # MAP INITIALIZATION EXAMPLE
+## -------------------------------------------------------------------------- #
+## MAP INITIALIZATION EXAMPLE                                                 #
+## -------------------------------------------------------------------------- #
 # cam = init_camera()
 # M, rect_width, rect_height, map, map_enlarged = init_map(cam)
 # plt.figure()

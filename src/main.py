@@ -1,3 +1,8 @@
+## 
+# @file main.py
+#
+# @brief Definition of main file for global and local navigation of a Thymio.
+
 # ========================================================================== #
 #  Imports.                                                                  # 
 # ========================================================================== #
@@ -12,7 +17,7 @@ from camera import *
 from create_map import *
 from local_navigation import *
 from locate_thymio_goal import *
-from astar import *
+from global_path_planning import *
 from kalman_filter import *
 
 # ========================================================================== #
@@ -70,84 +75,71 @@ def main():
     # P_est is a list of covariance matrices
     P_est = [1000 * np.eye(4)]                                                                  #
 
+    # Initialization of some variables
     next_node_reached = True
     go_to_next_node = False
     obj_moved = False
     thymio_moved = False
     kidnapping_timestamp = 0
+
     # Initialize control inputs
     dvx = 0
     dvy = 0
 
-    ## MAIN LOOP
+    # ====================================================================== #     
+    #  Main loop.                                                            # 
+    # ====================================================================== #
+
     while True:
         start_time = time.time()
         img_rect = np.zeros((rect_height, rect_width))
 
-        # Update measurements
+        # Update measurements if possible
         img, img_taken = take_picture(cam)
         obstructed = False
         if img_taken:
             img_rect = get_rectified_img(img, M, rect_width, rect_height)
-            thymio_pos, thymio_found = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-
-            speed = (thymio.get_motor_left_speed() + thymio.get_motor_right_speed())/2 * SPEED_COEFF
-            x_meas = 0
-            y_meas = 0
-            vx_meas = 0
-            vy_meas = 0
-            # If Thymio found, update x, y, vx and vy measured
-            if thymio_found:
-                thymio.set_last_angle(thymio_pos[2])
-                x_meas = thymio_pos[0]
-                y_meas = thymio_pos[1]
-
-                cv2.circle(img_rect, [int(x_meas), int(y_meas)] , 4, (0, 0, 255), -1)
-
-                vx_meas = speed * math.cos(thymio.get_last_angle())
-                vy_meas = -speed * math.sin(thymio.get_last_angle())
-
-            else:
-                obstructed = True
+            x_meas, y_meas, vx_meas, vy_meas, obstructed = thymio.get_measurements(img_rect)
         else:
             obstructed = True
         
-        # Update a posteriori estimates
-        new_x_est, new_P_est, new_x_est_a_priori = kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est[-1], P_est[-1], dvx, dvy, obstructed = obstructed)
+        # Update a posteriori estimates (Kalman filter)
+        new_x_est, new_P_est = kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est[-1], P_est[-1], dvx, dvy, obstructed = obstructed)
+        thymio.set_last_position(new_x_est[0:2])
         x_est.append(new_x_est)
+        P_est.append(new_P_est)
 
+        # Set default control inputs to 0
         dvx = 0
         dvy = 0
+
         # Detect if next node reached
         if dist(path[0], x_est[-1][0:2]) < NODE_DIST_THR:
             next_node_reached = True
+
         # Compute the control inputs to go to next node
         if go_to_next_node:
             # we have to send control inputs that will make it go to the desired vx, vy
-            # we first send the previous a posteriori inputs to stop the motors, then send
-            # the control inputs
+            # The control inputs are divided into 2 terms: one to stop the motors in the model
+            # and one to have the correct vx, vy once the Thymio has rotated.
             dvx = BASE_SPEED*math.cos(thymio.get_last_angle()) * SPEED_COEFF - x_est[-1][2]
             dvy = -BASE_SPEED*math.sin(thymio.get_last_angle()) * SPEED_COEFF -x_est[-1][3]
             thymio.set_motor_speeds(BASE_SPEED, BASE_SPEED)
             go_to_next_node = False
 
-    #     # Rotate the Thymio towards next node if current node reached
+        # Rotate the Thymio towards next node if current node reached
         if next_node_reached:
             path = np.delete(path, 0, 0)
+
             if len(path) == 0:
                 thymio.stop_thymio()
                 cv2.destroyWindow('Rectified image')
                 print("Global objective reached")
-                break # we have reached the last node
+                break
+
             next_node = path[0]
             thymio_angle = thymio.get_last_angle()
-            img, img_taken = take_picture(cam)
-            if img_taken:
-                img_rect = get_rectified_img(img, M, rect_width, rect_height)
-                thymio_pos, thymio_found = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-                if thymio_found:
-                    thymio_angle = thymio_pos[2]
-            th_obj_angle = math.atan2(-(next_node[1] - x_est[-1][1]), next_node[0] - x_est[-1][0])
+            th_obj_angle = angle_two_points(x_est[-1][0], x_est[-1][1], next_node[0], next_node[1])
             da = thymio_angle - th_obj_angle
 
             if abs(da) > ANGLE_THRESHOLD and dist(path[0], x_est[-1][0:2]) > NODE_DIST_THR:
@@ -186,7 +178,7 @@ def main():
         # Check if global objective position has moved. Recalculate path if so.
         if img_taken:
             new_obj_pos, obj_found = locate_goal_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-            if obj_found:
+            if obj_found and len(obj_pos) != 0:
                 if dist(obj_pos, new_obj_pos) >  OBJ_KIDNAPPING_THR:
                     obj_moved = True
                     obj_pos = new_obj_pos
@@ -206,8 +198,10 @@ def main():
                 thymio.stop_thymio()
                 print("Recalculating path")
                 obj_pos = new_obj_pos
-                path = init_path(cam, thymio, clear_start_node = True)[0]
+                path = init_path(cam, thymio, clear_start_node = True, use_last_pos = True)[0]
                 next_node_reached = True
+        
+        # Display Thymio on camera feed
         cv2.arrowedLine(img_rect, (int(x_est[-1][0]), int(x_est[-1][1])), (int(x_est[-1][0] + math.cos(thymio.get_last_angle())*50), int(x_est[-1][1] - math.sin(thymio.get_last_angle())*50)),
                                     (128, 0, 255), 3, tipLength = 0.3)
         cv2.polylines(img_rect, np.int32([path]), False, (255, 0, 255), 3)
@@ -234,6 +228,7 @@ def main():
 
         cv2.imshow('Rectified image', img_rect) 
         cv2.waitKey(1)
+        
         # We want to take into account execution time between each Kalman update call
         end_time = time.time()
         delta_time = end_time - start_time

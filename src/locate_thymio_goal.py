@@ -1,20 +1,31 @@
+## 
+# @file locate_thymio_goal.py
+#
+# @brief Definition functions to locate Thymio and objective.
+
+# ========================================================================== #
+#  Imports.                                                                  # 
+# ========================================================================== #
 
 import math 
-import numpy as npu
+import numpy as np
 
+## Custom modules
 from img_utils import *
 
+# ========================================================================== #
+#  Global constants.                                                         # 
+# ========================================================================== #
 
-#BGR2HSV gives value from 0 to 180 fro the first component
+## Thymio marker ID.
+THYMIO_ID = 5
 
-GREEN_THR_HSV_HIGH = (100, 180, 180)
-GREEN_THR_HSV_LOW = (35, 50, 70)
+## Objective ID.
+OBJECTIVE_ID = 6
 
-BLUE_THR_HSV_HIGH = (100, 255, 255)
-BLUE_THR_HSV_LOW = (80, 110, 110)
-
-PURPLE_THR_HSV_HIGH = (155, 150, 150)
-PURPLE_THR_HSV_LOW = (135, 50, 50)
+# ========================================================================== #
+#  Exported functions.                                                       # 
+# ========================================================================== #
 
 
 #thymio's rotaion point is blue, thymio's "direction point" is purple, goal is green;
@@ -40,27 +51,33 @@ def cartesian_to_grid(coords,map_size,grid_size):
 #  @return thymio_pose   gives thymio (x,y, angle) or (column,line, angle) coordinates
 #  @return found_thymio  (bool) returns true if thymio was found, false otherwise
 def locate_thymio_camera(rectified_img,coord_type, grid_size):
+
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
     (corners, ids, rejected) = cv2.aruco.detectMarkers(rectified_img, aruco_dict, parameters=aruco_params)
+
     thymio_pose = []
     if len(corners) >= 1:
         ids = ids.flatten()
         for (corner, id) in zip(corners, ids):
             if id == THYMIO_ID:
+
                 # extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
                 corners = corner.reshape((4, 2))
                 (top_left, top_right, bot_right, bot_left) = corners
+
                 # convert each of the (x, y)-coordinate pairs to integers
                 top_right = (int(top_right[0]), int(top_right[1]))
                 bot_right = (int(bot_right[0]), int(bot_right[1]))
                 bot_left = (int(bot_left[0]), int(bot_left[1]))
                 top_left = (int(top_left[0]), int(top_left[1]))
+
                 # compute and draw the center (x, y)-coordinates of the ArUco marker
                 cX = int((top_left[0] + bot_right[0] + top_right[0] + bot_left[0]) / 4.0)
                 cY = int((top_left[1] + bot_right[1] + top_right[1] + bot_left[1]) / 4.0)
                 angle = math.atan2(-((top_left[1]+top_right[1])/2 - (bot_left[1]+bot_right[1])/2), 
                                      (top_left[0]+top_right[0])/2 - (bot_left[0]+bot_right[0])/2)
+
                 if(coord_type == 'cartesian'):
                     thymio_pose = np.append([cX, cY], angle)    
                     return thymio_pose, True
@@ -82,39 +99,31 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
 #  @return goal_coords   gives goal (x,y) or (column,line, angle) coordinates
 #  @return found_goal   (bool) returns true if goal was found, false otherwise 
 def locate_goal_camera(rectified_img,coord_type, grid_size):
-    
-    # goal_coords, found_goal = get_color_dots(rectified_img, GREEN_THR_HSV_LOW, GREEN_THR_HSV_HIGH, 1)
-    # goal_coords = goal_coords[0]
-    
-    # if(found_goal):
-    #     if(coord_type == 'cartesian'):
-    #         return goal_coords, True
-    #     else:
-    #         map_size = (np.size(rectified_img, 1),np.size(rectified_img, 0))
-    #         goal_coords  = cartesian_to_grid(goal_coords,map_size,grid_size)
-    #         return goal_coords, True   
-    # else:
-    #     return [], False 
 
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
     (corners, ids, rejected) = cv2.aruco.detectMarkers(rectified_img, aruco_dict, parameters=aruco_params)
     obj_pos = []
+
     if len(corners) >= 1:
         ids = ids.flatten()
         for (corner, id) in zip(corners, ids):
             if id == OBJECTIVE_ID:
+
                 # extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
                 corners = corner.reshape((4, 2))
                 (top_left, top_right, bot_right, bot_left) = corners
+
                 # convert each of the (x, y)-coordinate pairs to integers
                 top_right = (int(top_right[0]), int(top_right[1]))
                 bot_right = (int(bot_right[0]), int(bot_right[1]))
                 bot_left = (int(bot_left[0]), int(bot_left[1]))
                 top_left = (int(top_left[0]), int(top_left[1]))
+
                 # compute and draw the center (x, y)-coordinates of the ArUco marker
                 cX = int((top_left[0] + bot_right[0] + top_right[0] + bot_left[0]) / 4.0)
                 cY = int((top_left[1] + bot_right[1] + top_right[1] + bot_left[1]) / 4.0)
+                
                 if(coord_type == 'cartesian'):
                     obj_pos = [cX, cY]  
                     return obj_pos, True
