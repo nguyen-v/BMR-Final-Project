@@ -93,7 +93,8 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                 print(thymio_pose)
             if found_thymio:
                 angle = thymio_pose[2]
-                cv2.arrowedLine(img_rect, (int(thymio_pose[0]), int(thymio_pose[1])), (int(thymio_pose[0] + math.cos(angle)*50), int(thymio_pose[1] - math.sin(angle)*50)),
+                cv2.arrowedLine(img_rect, (int(thymio_pose[0]), int(thymio_pose[1])),
+                                (int(thymio_pose[0] + math.cos(angle)*50), int(thymio_pose[1] - math.sin(angle)*50)),
                                 (128, 0, 255), 3, tipLength = 0.3)
                 # Add memory terms
                 front_prox[NUM_PROX_VALUES] = y[0]/MEM_SCALE

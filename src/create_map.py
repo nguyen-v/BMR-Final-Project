@@ -84,7 +84,8 @@ def create_map(img, map_width, map_height, verbose = False):
     # Convert to binary image
     # Blur to reduce noise
     img_rect_gray = cv2.GaussianBlur(img_rect_gray,(9,9),cv2.BORDER_DEFAULT)
-    (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, 
+                                           cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (4,4))
 
     map = np.ones((map_height, map_width))*NO_OBSTACLE
@@ -113,10 +114,12 @@ def create_map(img, map_width, map_height, verbose = False):
 def remove_aruco_tags(img_rect):
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
-    (corners, ids, rejected) = cv2.aruco.detectMarkers(img_rect, aruco_dict, parameters=aruco_params)
+    (corners, ids, rejected) = cv2.aruco.detectMarkers(img_rect, aruco_dict, 
+                                                       parameters=aruco_params)
     if len(corners) > 0:
         for corner in corners:
-            # Extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
+            # Extract the marker corners (which are always returned in 
+            # top-left, top-right, bottom-right, and bottom-left order)
             corners = corner.reshape((4, 2))
             (top_left, top_right, bot_right, bot_left) = corners
             # Convert each of the (x, y)-coordinate pairs to integers
@@ -125,8 +128,10 @@ def remove_aruco_tags(img_rect):
             bot_left = (int(bot_left[0]), int(bot_left[1]))
             top_left = (int(top_left[0]), int(top_left[1]))
 
-            # Draw a white square over aruco tags. This is to avoid having them detected as obstacles.
-            cv2.fillPoly(img_rect, pts = [np.array([top_left, top_right, bot_right, bot_left])], color = (WHITE,WHITE,WHITE))
+            # Draw a white square over aruco tags. 
+            # This is to avoid having them detected as obstacles.
+            cv2.fillPoly(img_rect, pts = [np.array([top_left, top_right, bot_right, bot_left])], 
+                                                   color = (WHITE,WHITE,WHITE))
 
     return img_rect
 
@@ -146,8 +151,6 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
     if verbose:
         print("Image dimensions are {} x {}".format(width, height))
 
-    # map_corners, found_pts = get_color_dots(img, RED_THR_HSV_LOW, RED_THR_HSV_HIGH, NUM_MAP_CORNERS, is_red = True)
-    # map_corners, found_pts = get_map_corners(img)     
     top_left, top_right, bot_left, bot_right, found_pts = get_map_corners(img)     
     if found_pts == False:
         return [], 0, 0, found_pts
@@ -175,7 +178,7 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
 ## Returns list of coordinates of map corner markers
 #  @param       img     input raw image
 #  @return      A list of (x, y) positions of map corners.
-#  @note        https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
+#  @note        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def get_map_corners(img):
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
     aruco_params = cv2.aruco.DetectorParameters_create()
@@ -185,7 +188,8 @@ def get_map_corners(img):
         ids = ids.flatten()
         for (corner, id) in zip(corners, ids):
             if id in MAP_CORNER_ID:
-                # extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
+                # extract the marker corners (which are always returned in 
+                # top-left, top-right, bottom-right, and bottom-left order)
                 corners = corner.reshape((4, 2))
                 (top_left, top_right, bot_right, bot_left) = corners
                 # convert each of the (x, y)-coordinate pairs to integers

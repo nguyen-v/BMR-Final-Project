@@ -46,6 +46,9 @@ OBST_SIZE = 100
 ## Time before path recalculation after detection of objective moved.
 OBJ_MOVED_DELTA_T = 1
 
+## Initial estimated covariance
+INIT_COV = 1000
+
 # ========================================================================== #
 #  Main function.                                                            # 
 # ========================================================================== #
@@ -73,7 +76,7 @@ def main():
 
     # Initialize a posteriori covariance matrix of predicted state
     # P_est is a list of covariance matrices
-    P_est = [1000 * np.eye(4)]                                                                  #
+    P_est = [INIT_COV * np.eye(4)]
 
     # Initialization of some variables
     next_node_reached = True
@@ -86,9 +89,9 @@ def main():
     dvx = 0
     dvy = 0
 
-    # ====================================================================== #     
+    # ---------------------------------------------------------------------- #     
     #  Main loop.                                                            # 
-    # ====================================================================== #
+    # ---------------------------------------------------------------------- #
 
     while True:
         start_time = time.time()
@@ -104,7 +107,8 @@ def main():
             obstructed = True
         
         # Update a posteriori estimates (Kalman filter)
-        new_x_est, new_P_est = kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est[-1], P_est[-1], dvx, dvy, obstructed = obstructed)
+        new_x_est, new_P_est = kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est[-1], 
+                                             P_est[-1], dvx, dvy, obstructed = obstructed)
         thymio.set_last_position(new_x_est[0:2])
         x_est.append(new_x_est)
         P_est.append(new_P_est)
@@ -202,8 +206,9 @@ def main():
                 next_node_reached = True
         
         # Display Thymio on camera feed
-        cv2.arrowedLine(img_rect, (int(x_est[-1][0]), int(x_est[-1][1])), (int(x_est[-1][0] + math.cos(thymio.get_last_angle())*50), int(x_est[-1][1] - math.sin(thymio.get_last_angle())*50)),
-                                    (128, 0, 255), 3, tipLength = 0.3)
+        cv2.arrowedLine(img_rect, (int(x_est[-1][0]), int(x_est[-1][1])), (int(x_est[-1][0] + 
+                        math.cos(thymio.get_last_angle())*50), int(x_est[-1][1] - math.sin(thymio.get_last_angle())*50)),
+                        (128, 0, 255), 3, tipLength = 0.3)
         cv2.polylines(img_rect, np.int32([path]), False, (255, 0, 255), 3)
         cv2.circle(img_rect, [int(x_est[-1][0]),int(x_est[-1][1])] , 8, (0, 255, 255), -1)
 
