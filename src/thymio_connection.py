@@ -66,15 +66,12 @@ def connect_to_thymio(num_err = MAX_NUM_ERR, verbose = False):
             # If multiple Thymios are connected, just connect to the first one on the list.
             connected_to_thymio = False
             while not connected_to_thymio:
-                # try:
                 th = Thymio.serial(port = thymio_port[0], refreshing_rate = DEF_REFR_RATE) 
                 time.sleep(DETTA_T_COOLDOWN)
                 connected_to_thymio = True
                 if verbose:
                     print("Successfully connected to thymio on {}.".format(thymio_port[0]))
                 return th
-                # except serial.serialutil.SerialException:
-                #     time.sleep(DELTA_T_ERR)
 
         else:
             error_cnt = error_cnt + 1

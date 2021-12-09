@@ -48,10 +48,10 @@ NO_OBSTACLE = 0
 CHECK_CORNER_COEFF = 0.1
 
 ## Dilation kernel.
-DILATION_KERNEL = np.ones((2,2),np.uint8)
+DILATION_KERNEL = np.ones((3,3),np.uint8)
 
 ## Number of dilation iterations.
-DILATION_ITER = 2
+DILATION_ITER = 1
 
 ## Map corner marker IDs.
 MAP_CORNER_ID = [1, 2, 3, 4]
@@ -100,7 +100,7 @@ def create_map(img, map_width, map_height, verbose = False):
             # If the average is smaller than OBS_LUM_THR, it is considered black (obstacle)
             if (img_rect_bin[y+d][x+d]/4 + img_rect_bin[y+d][x-d]/4 + 
                 img_rect_bin[y-d][x+d]/4 + img_rect_bin[y-d][x-d]/4) < OBS_LUM_THR:
-                map[row-1, col-1] = OBSTACLE
+                map[row, col] = OBSTACLE
 
 
     # Dilate the map
@@ -177,7 +177,7 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
 
 ## Returns list of coordinates of map corner markers
 #  @param       img     input raw image
-#  @return      A list of (x, y) positions of map corners.
+#  @return      A list of (x, y) positions of map corners (top_left, top_right, bottom_left, bottom_right).
 #  @note        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def get_map_corners(img):
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
