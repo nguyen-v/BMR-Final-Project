@@ -31,25 +31,26 @@ OBJECTIVE_ID = 6
 #thymio's rotaion point is blue, thymio's "direction point" is purple, goal is green;
 
 # transform (x,y) coordinates into grid coordinates
-#  @param coords         cartesian coordinates
-#  @param map_size       size of the map in pixels (size(x),size(y))
-#                        cartesian will return (x,y) coordinates
-#                        grid will return (column, line) coordinates
-#  @param grid_size      size of the grid (nb_columns,nb_lines)
-#  @return grid_coords   pos in the grid
+#  @param       coords          cartesian coordinates
+#  @param       map_size        size of the map in pixels (size(x),size(y))
+#                               cartesian will return (x,y) coordinates
+#                               grid will return (column, line) coordinates
+#  @param       grid_size       size of the grid (nb_columns,nb_lines)
+#  @return      grid_coords     pos in the grid
 def cartesian_to_grid(coords,map_size,grid_size):
-    grid_coords = (math.floor(coords[1]*grid_size[1]/map_size[1]),math.floor(coords[0]*grid_size[0]/map_size[0]))
+    grid_coords = (math.floor(coords[1]*grid_size[1]/map_size[1]), math.floor(coords[0]*grid_size[0]/map_size[0]))
     return grid_coords
 
 
 ## Returns position of the thymio if found
-#  @param rectified_img  Array containing each pixels of the rectified image from the camera 
-#  @param coord_type     string variable that can contain "cartesian" or "grid"
-#                        cartesian will return (x,y) coordinates
-#                        grid will return (column,line) coordinates
-#  @param grid_size      size of the grid (nb_colums,nb_lines)
-#  @return thymio_pose   gives thymio (x,y, angle) or (column,line, angle) coordinates
-#  @return found_thymio  (bool) returns true if thymio was found, false otherwise
+#  @param       rectified_img   Array containing each pixels of the rectified image from the camera 
+#  @param       coord_type      string variable that can contain "cartesian" or "grid"
+#                               cartesian will return (x,y) coordinates
+#                               grid will return (column,line) coordinates
+#  @param       grid_size       size of the grid (nb_colums,nb_lines)
+#  @return      thymio_pose     gives thymio (x,y, angle) or (column,line, angle) coordinates
+#  @return      found_thymio    (bool) returns true if thymio was found, false otherwise
+#  @note                        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def locate_thymio_camera(rectified_img,coord_type, grid_size):
 
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
@@ -62,7 +63,8 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
         for (corner, id) in zip(corners, ids):
             if id == THYMIO_ID:
 
-                # extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
+                # extract the marker corners (which are always returned in 
+                # top-left, top-right, bottom-right, and bottom-left order)
                 corners = corner.reshape((4, 2))
                 (top_left, top_right, bot_right, bot_left) = corners
 
@@ -91,13 +93,14 @@ def locate_thymio_camera(rectified_img,coord_type, grid_size):
 
 
 ## Returns position of the goal if found
-#  @param rectified_img  Array containing each pixels of the rectified image from the camera 
-#  @param coord_type     string variable that can contain "cartesian" or "grid"
-#                        cartesian will return (x,y) coordinates
-#                        grid will return (column,line) coordinates
-#  @param grid_size      size of the grid (nb_columns,nb_lines)
-#  @return goal_coords   gives goal (x,y) or (column,line, angle) coordinates
-#  @return found_goal   (bool) returns true if goal was found, false otherwise 
+#  @param       rectified_img   Array containing each pixels of the rectified image from the camera 
+#  @param       coord_type      string variable that can contain "cartesian" or "grid"
+#                               cartesian will return (x,y) coordinates
+#                               grid will return (column,line) coordinates
+#  @param       grid_size       size of the grid (nb_columns,nb_lines)
+#  @return      goal_coords     gives goal (x,y) or (column,line, angle) coordinates
+#  @return      found_goal      (bool) returns true if goal was found, false otherwise 
+#  @note                        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def locate_goal_camera(rectified_img,coord_type, grid_size):
 
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
@@ -110,7 +113,8 @@ def locate_goal_camera(rectified_img,coord_type, grid_size):
         for (corner, id) in zip(corners, ids):
             if id == OBJECTIVE_ID:
 
-                # extract the marker corners (which are always returned in top-left, top-right, bottom-right, and bottom-left order)
+                # extract the marker corners (which are always returned in 
+                # top-left, top-right, bottom-right, and bottom-left order)
                 corners = corner.reshape((4, 2))
                 (top_left, top_right, bot_right, bot_left) = corners
 

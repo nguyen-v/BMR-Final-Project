@@ -72,14 +72,18 @@ def reconstruct_path(cameFrom, current):
         current=cameFrom[current]
     return total_path
 
-## A* for 2D occupancy grid. Finds a path from start to goal. h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+## A* for 2D occupancy grid. Finds a path from start to goal. 
+#  h is the heuristic function. h(n) estimates the cost to reach goal from node n.
 #  @param   start               start node (x, y).
 #  @param   goal_m              goal node (x, y).
 #  @param   occupancy_grid      the grid map.
-#  @param   movement            select between 4-connectivity ('4N') and 8-connectivity ('8N', default).
-#  @return                      a tuple that contains: (the resulting path in meters, the resulting path in data array indices).
+#  @param   movement            select between 4-connectivity ('4N') and 
+#                               8-connectivity ('8N', default).
+#  @return                      a tuple that contains: (the resulting path in meters, 
+#                               the resulting path in data array indices).
 #  @note                        Adapted from code from Solutions of Exercise Session 5.
-def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width = MAP_WIDTH_CELL, map_height = MAP_HEIGHT_CELL):
+def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", 
+           map_width = MAP_WIDTH_CELL, map_height = MAP_HEIGHT_CELL):
     
     # Check if the start and goal are within the boundaries of the map
     for point in [start, goal]:
@@ -109,14 +113,16 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
     # A* Algorithm implementation
     # --------------------------------------------------------------------------------------------
     
-    # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
+    # The set of visited nodes that need to be (re-)expanded, i.e. 
+    # for which the neighbors need to be explored
     # Initially, only the start node is known.
     openSet = [start]
     
     # The set of visited nodes that no longer need to be expanded.
     closedSet = []
 
-    # For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from start to n currently known.
+    # For node n, cameFrom[n] is the node immediately preceding it on 
+    # the cheapest path from start to n currently known.
     cameFrom = dict()
 
     # For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
@@ -148,7 +154,8 @@ def A_Star(start, goal, h, coords, occupancy_grid, movement_type="4N", map_width
             neighbor = (current[0]+dx, current[1]+dy)
             
             # if the node is not in the map, skip
-            if (neighbor[0] >= occupancy_grid.shape[0]) or (neighbor[1] >= occupancy_grid.shape[1]) or (neighbor[0] < 0) or (neighbor[1] < 0):
+            if ((neighbor[0] >= occupancy_grid.shape[0]) or (neighbor[1] >= occupancy_grid.shape[1]) or 
+                (neighbor[0] < 0) or (neighbor[1] < 0)):
                 continue
             
             # if the node is occupied or has already been visited, skip
@@ -194,14 +201,16 @@ def get_global_path(map_enlarged, start, goal):
     h = dict(zip(coords, h))
 
     # Run the A* algorithm
-    path, visitedNodes = A_Star(start, goal, h, coords, occupancy_grid, movement_type="8N", map_width = MAP_WIDTH_CELL, map_height = MAP_HEIGHT_CELL)
+    path, visitedNodes = A_Star(start, goal, h, coords, occupancy_grid, movement_type="8N", 
+                                map_width = MAP_WIDTH_CELL, map_height = MAP_HEIGHT_CELL)
     if path == []:
         return [], False
     path = np.array(path)
     visitedNodes = np.array(visitedNodes)
     return path, True
 
-## Given a 2D ndarray (npt, m) of npt coordinates in m dimension, insert 2**(n-1) additional points on each trajectory segment
+## Given a 2D ndarray (npt, m) of npt coordinates in m dimension, 
+#  insert 2**(n-1) additional points on each trajectory segment
 #  Returns an (npt*2**(n-1), m) ndarray
 #  @param   x           Input trajectory.
 #  @param   n           Subdivision parameter.
@@ -295,7 +304,8 @@ def init_path(cam, thymio, clear_start_node = False, use_last_pos = False):
         thymio_pos_grid = cartesian_to_grid(thymio_pos[0:2], (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
         obj_pos_grid = cartesian_to_grid(obj_pos, (rect_width, rect_height), (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
 
-        if clear_start_node == True: # this option is useful when recalculating path because thyimo might be close to an obstacle
+        # This option is useful when recalculating path because thyimo might be close to an obstacle
+        if clear_start_node == True:
             map_enlarged[thymio_pos_grid[0]][thymio_pos_grid[1]] = 0
         path, found_path = get_global_path(map_enlarged, thymio_pos_grid, obj_pos_grid)
 

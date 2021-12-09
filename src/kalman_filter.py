@@ -21,13 +21,28 @@ T_s = 0.1
 A = np.array([[1.0, 0, T_s, 0],[0, 1.0, 0, T_s],[0, 0, 1.0, 0],[0, 0, 0, 1.0]])
 B = np.array([[T_s, 0], [0, T_s], [1.0, 0], [0, 1.0]])
 Q = np.diag([5, 5, 10, 10])
+H = np.eye(4)
 
 # ========================================================================== #
 #  Exported functions                                                        # 
 # ========================================================================== #
 
+## Returns new a posteriori estimates from measurement and previous a posteriori estimates
+#  @param   x_meas          Measured x-coordinate.
+#  @param   y_meas          Measured y-coordinate.
+#  @param   vx_meas         Measured x-velocity.
+#  @param   vy_meas         Measured y-velocity.
+#  @param   dvx             y-velocity control input.
+#  @param   dvy             x-velocity control input.
+#  @param   obstructed      Set to true if measurements cannot be taken (camera is obstructed).
+#  @return  x_est           A posteriori estimate.
+#  @return  P_est           A posteriori covariance matrix.
+#  @note                    Adapted from Kalman filter of solutions of exercise session 7.
 def kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est_prev, P_est_prev, dvx = 0, dvy = 0, obstructed = False):
     
+    # The states are:
+    # x_est = [x, y, vx, vy]
+
     ## Prediciton through the a priori estimate
     # estimated mean of the state
     U_in = np.array([dvx, dvy])
@@ -42,8 +57,8 @@ def kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est_prev, P_est_prev, dvx 
         R = np.diag([math.inf, math.inf, math.inf, math.inf])
     else:
         R = np.diag([1, 1, 5, 5])
+
     y = np.array([x_meas, y_meas, vx_meas, vy_meas])
-    H = np.eye(4)
 
     # innovation / measurement residual
     i = y - H @ x_est_a_priori

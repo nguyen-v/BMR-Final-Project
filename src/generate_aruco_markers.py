@@ -64,6 +64,7 @@ def get_aruco_markers(id_list, name = "", dict = DEF_ARUCO_DICT):
         marker = generate_aruco_marker(id_list, dict)
         cv2.imwrite(img_path + name + str(id_list) + ".png", marker)
 
+## Example
 # get_aruco_markers(THYMIO_ID, "thymio_marker")
 # get_aruco_markers(OBJECTIVE_ID, "obj_marker")
 # get_aruco_markers(MAP_CORNER_ID, "map_marker")
