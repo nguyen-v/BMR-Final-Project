@@ -7,22 +7,22 @@
 #  Imports.                                                                  # 
 # ========================================================================== #
 
+import math
+import cv2
+import numpy as np
+
+## Custom modules
+from img_utils import angle_two_points
 from MyThymio import *
 from locate_thymio_goal import *
 from thymio_connection import *
 from camera import *
 from create_map import *
-import math
-
-import cv2
-import numpy as np
 
 # ========================================================================== #
 #  Global constants.                                                         # 
 # ========================================================================== #
 
-## Number of proximity sensor values.
-NUM_PROX_VALUES = 7
 
 ## Number of memories
 NUM_MEM = 2
@@ -43,28 +43,25 @@ WEIGHTS_LEFT_GND = [50, -20]
 WEIGHTS_RIGHT_GND = [-20, 50]
 
 ## Scale factor for proximity sensors.
-PROX_SCALE = 20
+PROX_SCALE = 30
 
 ## Proximity sensors threshold. Values below this will be considered zero.
-PROX_THR = 200
-
-## Scale factor for ground sensors.
-GND_SCALE = 200
+PROX_THR = 100
 
 ## Scale factor for motors.
 MOTOR_SCALE = 15
 
 ## Memory scale factor for the motors
-MEM_SCALE = 100
+MEM_SCALE = 30
 
 ## Objective attractiveness coefficient.
-OBJ_ATT_COEFF = 4000
+OBJ_ATT_COEFF = 2500
 
 ## Objective base attractiveness
-OBJ_ATT_BASE = 1000
+OBJ_ATT_BASE = 1500
 
 ## Local avoidance threshold distance to local objective (in px).
-LOC_DIST_THR = 20
+LOC_DIST_THR = 40
 
 ## Local avoidance time step
 TS_LOCAL = 0.1
@@ -88,8 +85,9 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
         # print(img_taken)
         if img_taken:
             img_rect = get_rectified_img(img, M, rect_width,  rect_height)
-            cv2.circle(img_rect, obj_pos, 4, (0, 0, 255), -1)
-            thymio_pose, found_thymio = locate_thymio_camera(img_rect, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
+            img_rect_raw = img_rect.copy()
+            cv2.circle(img_rect, (int(obj_pos[0]), int(obj_pos[1])), 4, (0, 0, 255), -1)
+            thymio_pose, found_thymio = locate_thymio_camera(img_rect_raw, "cartesian", (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
             if verbose:
                 print("Found thymio: {}".format(found_thymio))
                 print(thymio_pose)
@@ -123,30 +121,17 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                 y[0] = y[0] + OBJ_ATT_BASE + da/math.pi*OBJ_ATT_COEFF
                 y[1] = y[1] + OBJ_ATT_BASE - da/math.pi*OBJ_ATT_COEFF
 
-                # # Map obstacles contribution (repulsive)
-                # gnd_sens = np.divide(thymio.get_gnd_sensors(), GND_SCALE)
-                # we have to put a threshold on ground sensors if global obstacles have no gradient
-                # for i in range(NUM_GND_SENS):
-                #     y[0] = y[0] + gnd_sens[i] * WEIGHTS_LEFT_GND[i]
-                #     y[1] = y[1] + gnd_sens[i] * WEIGHTS_RIGHT_GND[i]
-
                 thymio.set_motor_left_speed(int(y[0]/MOTOR_SCALE))
                 thymio.set_motor_right_speed(int(y[1]/MOTOR_SCALE))
                 if math.dist([thymio_pose[0], thymio_pose[1]], [obj_pos[0], obj_pos[1]]) < LOC_DIST_THR:
                     thymio.stop_thymio()
+                    print("Obstacle avoided")
+                    cv2.destroyWindow('Rectified image')
                     break
             else:
+
                 thymio.stop_thymio()
-            cv2.imshow('Local avoidance', img_rect)
+            # print(local_obj_reached)
+            cv2.imshow('Rectified image', img_rect)
             cv2.waitKey(1)
-    time.sleep(TS_LOCAL)
-
-
-## Calculates the angle formed by x-axis and the line intersecting two input points.
-#  @param x1    x-coordinate of first point
-#  @param y1    y-coordinate of first point
-#  @param x2    x-coordinate of second point
-#  @param y2    y-coordinate of second point
-#  @return      Angle formed by x-axis and the line intersecting two input points.
-def angle_two_points(x1, y1, x2, y2):
-    return math.atan2(-(y2-y1), x2-x1)
+        time.sleep(TS_LOCAL)
