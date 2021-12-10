@@ -53,10 +53,3 @@ def take_picture(cam):
 #  @param   img     Image to save.
 def save_camera_img(img, filename):
     cv2.imwrite(dirname + filename + ".png", img)
-
-cam = init_camera()
-
-img_taken = False
-while not img_taken:
-    img_normal, img_taken = take_picture(cam)
-save_camera_img(img_normal, "img_normal")
