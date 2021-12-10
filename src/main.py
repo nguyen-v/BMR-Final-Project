@@ -229,7 +229,7 @@ def main():
                     cv2.destroyWindow('Rectified image')
                 except: # might raise error if this destroywindow is called before a window has been created
                     pass
-                local_avoidance(thymio, local_objective, cam, M, rect_width, rect_height)
+                local_avoidance(thymio, local_objective, cam, M, rect_width, rect_height, map = map_enlarged)
 
         cv2.imshow('Rectified image', img_rect) 
         cv2.waitKey(1)

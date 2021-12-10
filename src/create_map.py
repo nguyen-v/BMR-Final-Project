@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 from img_utils import *
 from camera import *
+from locate_thymio_goal import THYMIO_ID
 
 # ========================================================================== #
 #  Global constants.                                                         # 
@@ -48,10 +49,10 @@ NO_OBSTACLE = 0
 CHECK_CORNER_COEFF = 0.1
 
 ## Dilation kernel.
-DILATION_KERNEL = np.ones((2,2),np.uint8)
+DILATION_KERNEL = np.ones((3,3),np.uint8)
 
 ## Number of dilation iterations.
-DILATION_ITER = 2
+DILATION_ITER = 1
 
 ## Map corner marker IDs.
 MAP_CORNER_ID = [1, 2, 3, 4]
@@ -86,7 +87,8 @@ def create_map(img, map_width, map_height, verbose = False):
     img_rect_gray = cv2.GaussianBlur(img_rect_gray,(9,9),cv2.BORDER_DEFAULT)
     (thresh, img_rect_bin) = cv2.threshold(img_rect_gray, BIN_THR_LOW, BIN_THR_HIGH, 
                                            cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (4,4))
+
+    img_rect_bin = cv2.morphologyEx(img_rect_bin, cv2.MORPH_OPEN, (5,5))
 
     map = np.ones((map_height, map_width))*NO_OBSTACLE
     size_cell_px = rect_width/map_width
@@ -100,7 +102,7 @@ def create_map(img, map_width, map_height, verbose = False):
             # If the average is smaller than OBS_LUM_THR, it is considered black (obstacle)
             if (img_rect_bin[y+d][x+d]/4 + img_rect_bin[y+d][x-d]/4 + 
                 img_rect_bin[y-d][x+d]/4 + img_rect_bin[y-d][x-d]/4) < OBS_LUM_THR:
-                map[row-1, col-1] = OBSTACLE
+                map[row, col] = OBSTACLE
 
 
     # Dilate the map
@@ -116,8 +118,9 @@ def remove_aruco_tags(img_rect):
     aruco_params = cv2.aruco.DetectorParameters_create()
     (corners, ids, rejected) = cv2.aruco.detectMarkers(img_rect, aruco_dict, 
                                                        parameters=aruco_params)
+    ids = ids.flatten()
     if len(corners) > 0:
-        for corner in corners:
+        for corner, id in zip(corners, ids):
             # Extract the marker corners (which are always returned in 
             # top-left, top-right, bottom-right, and bottom-left order)
             corners = corner.reshape((4, 2))
@@ -128,9 +131,12 @@ def remove_aruco_tags(img_rect):
             bot_left = (int(bot_left[0]), int(bot_left[1]))
             top_left = (int(top_left[0]), int(top_left[1]))
 
-            # Draw a white square over aruco tags. 
+            # Draw a white square over aruco tags and add a white cirlce on top of Thymio.
             # This is to avoid having them detected as obstacles.
-            cv2.fillPoly(img_rect, pts = [np.array([top_left, top_right, bot_right, bot_left])], 
+            if id == THYMIO_ID:
+                cv2.circle(img_rect, (int((top_left[0]+bot_right[0])/2),  int((top_left[1]+bot_right[1])/2)+15), 40, (WHITE,WHITE,WHITE), -1)
+            else:
+                cv2.fillPoly(img_rect, pts = [np.array([top_left, top_right, bot_right, bot_left])], 
                                                    color = (WHITE,WHITE,WHITE))
 
     return img_rect
@@ -177,7 +183,7 @@ def get_warp_matrix(img, map_width, map_height, verbose = False):
 
 ## Returns list of coordinates of map corner markers
 #  @param       img     input raw image
-#  @return      A list of (x, y) positions of map corners.
+#  @return      A list of (x, y) positions of map corners (top_left, top_right, bottom_left, bottom_right).
 #  @note        Adapted from https://www.pyimagesearch.com/2020/12/21/detecting-aruco-markers-with-opencv-and-python/
 def get_map_corners(img):
     aruco_dict = cv2.aruco.Dictionary_get(DEF_ARUCO_DICT)
