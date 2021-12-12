@@ -23,7 +23,7 @@ from img_utils import *
 # ========================================================================== #
 
 ## All nodes on the path that are within this range of initial position of Thymio are ignored
-NODE_DIST_THR = 50
+NODE_DIST_THR = 75
 
 # ========================================================================== #
 #  Exported functions.                                                       # 

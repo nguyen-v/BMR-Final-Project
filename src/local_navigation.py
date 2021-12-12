@@ -80,13 +80,13 @@ TS_LOCAL = 0.1
 #  @param       M               Warp transform matrix.
 #  @param       rect_width      Width of rectified image in pixels.
 #  @param       rect_height     Height of rectified image in pixels.
-def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = False, map = []):
+#  @param       map             Enlarged map grid.
+def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, map, verbose = False):
     front_prox = np.zeros(NUM_PROX_VALUES + NUM_MEM)
 
     y = np.zeros(2)
     while True:
         img, img_taken= take_picture(cam)
-        # print(img_taken)
         if img_taken:
             img_rect = get_rectified_img(img, M, rect_width,  rect_height)
             img_rect_raw = img_rect.copy()
@@ -129,7 +129,8 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                 # Map obstacles contribution
                 thymio_pos_grid = cartesian_to_grid(thymio_pose[0:2], (rect_width, rect_height), 
                                                     (MAP_WIDTH_CELL, MAP_HEIGHT_CELL))
-                circ = [(2, 0), (2, -1), (1, -2), (0, -2), (-1, -2), (-2, -1), (-2, 0), (-2, 1), (-1, 2), (0, 2), (1, 2), (2, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (0, -1), (1, -1)]
+                circ = [(2, 0), (2, -1), (1, -2), (0, -2), (-1, -2), (-2, -1), (-2, 0), (-2, 1), 
+                        (-1, 2), (0, 2), (1, 2), (2, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (0, -1), (1, -1)]
                 for dx, dy in circ:
                     out_of_map = False
                     is_obstacle = False
@@ -152,8 +153,6 @@ def local_avoidance(thymio, obj_pos, cam, M, rect_width, rect_height, verbose = 
                         if abs(da) <= math.pi/4:
                             y[0] = y[0] - da/math.pi*MAP_OBS_REP
                             y[1] = y[1] + da/math.pi*MAP_OBS_REP
-                
-                # print(thymio_pos_grid)
 
                 thymio.set_motor_left_speed(int(y[0]/MOTOR_SCALE))
                 thymio.set_motor_right_speed(int(y[1]/MOTOR_SCALE))
