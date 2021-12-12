@@ -1,7 +1,7 @@
 # Basics of Mobile Robotics Final Project
 Implementation of global and local navigation on a Thymio. 
 
-Basics of Mobile Robotics project at [EPFL](https://www.epfl.ch/) using the [Thymio robot](https://www.thymio.org/).
+Basics of Mobile Robotics (MICRO-452) project at [EPFL](https://www.epfl.ch/) using the [Thymio robot](https://www.thymio.org/).
 
 Read the report on [nbviewer](https://nbviewer.org/github/nguyen-v/BMR-Final-Project/blob/master/BMR-Final-Project.ipynb)
 
