@@ -35,7 +35,7 @@ ROT_COEFF = 1.5   # for BASE_SPEED = 100
 # ROT_COEFF = 0.942   # for BASE_SPEED = 150
 
 ## Speed conversion factor (raw values to px/s)
-SPEED_COEFF = 0.3
+SPEED_COEFF = 0.218
 
 ## Number of proximity sensor values.
 NUM_PROX_VALUES = 7

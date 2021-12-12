@@ -20,7 +20,7 @@ T_s = 0.1
 ## Kalman filter matrices
 A = np.array([[1.0, 0, T_s, 0],[0, 1.0, 0, T_s],[0, 0, 1.0, 0],[0, 0, 0, 1.0]])
 B = np.array([[T_s, 0], [0, T_s], [1.0, 0], [0, 1.0]])
-Q = np.diag([5, 5, 10, 10])
+Q = np.diag([2, 2, 3, 3])
 H = np.eye(4)
 
 # ========================================================================== #
@@ -56,7 +56,7 @@ def kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est_prev, P_est_prev, dvx 
     if obstructed:
         R = np.diag([math.inf, math.inf, math.inf, math.inf])
     else:
-        R = np.diag([1, 1, 5, 5])
+        R = np.diag([0.25, 0.25, 0.30, 0.30])
 
     y = np.array([x_meas, y_meas, vx_meas, vy_meas])
 
@@ -75,3 +75,12 @@ def kalman_filter(x_meas, y_meas, vx_meas, vy_meas, x_est_prev, P_est_prev, dvx 
     P_est = P_est_a_priori - K @ (H @ P_est_a_priori)
 
     return x_est, P_est
+
+## Updates the sampling time for Kalman filter
+#  @param   new_Ts      New sampling time in seconds.
+#  @note                This function is necessary when the execution time is significantly slower
+#                       than the sampling time (happens when we were recording, which slows down the
+#                       computer).
+def update_sampling_time(new_Ts):
+    global A
+    A = np.array([[1.0, 0, new_Ts, 0],[0, 1.0, 0, new_Ts],[0, 0, 1.0, 0],[0, 0, 0, 1.0]])

@@ -36,12 +36,9 @@ OBJ_KIDNAPPING_THR = 100
 ## Minimum distance to move thymio before robot "kidnapping" is detected.
 THYMIO_KIDNAPPING_THR = 200
 
-## All nodes within this range in pixels from the initial Thymio position are ignored.
-NODE_DIST_THR = 75
-
 ## Obstacle size in pixels. Larger values will make the local avoidance aim
 #  for a node that is further away.
-OBST_SIZE = 100
+OBST_SIZE = 150
 
 ## Time before path recalculation after detection of objective moved.
 OBJ_MOVED_DELTA_T = 1
@@ -80,6 +77,7 @@ def main():
 
     # Initialization of some variables
     next_node_reached = True
+    has_rotated = False
     go_to_next_node = False
     obj_moved = False
     thymio_moved = False
@@ -146,7 +144,7 @@ def main():
             th_obj_angle = angle_two_points(x_est[-1][0], x_est[-1][1], next_node[0], next_node[1])
             da = thymio_angle - th_obj_angle
 
-            if abs(da) > ANGLE_THRESHOLD and dist(path[0], x_est[-1][0:2]) > NODE_DIST_THR:
+            if abs(da) > ANGLE_THRESHOLD and dist(path[0], x_est[-1][0:2]) > NODE_DIST_THR/2:
                 if da > 0:
                     if da < math.pi:
                         da = -da
@@ -158,7 +156,10 @@ def main():
                     if da < -math.pi:
                         da = -2*math.pi - da
                 thymio.stop_thymio()
+                has_rotated = True
                 thymio.rotate_thymio(-da)
+            else:
+                has_rotated = False
             go_to_next_node = True
             next_node_reached = False
 
@@ -229,7 +230,7 @@ def main():
                     cv2.destroyWindow('Rectified image')
                 except: # might raise error if this destroywindow is called before a window has been created
                     pass
-                local_avoidance(thymio, local_objective, cam, M, rect_width, rect_height, map = map_enlarged)
+                local_avoidance(thymio, local_objective, cam, M, rect_width, rect_height, map_enlarged)
 
         cv2.imshow('Rectified image', img_rect) 
         cv2.waitKey(1)
@@ -238,7 +239,11 @@ def main():
         end_time = time.time()
         delta_time = end_time - start_time
         if delta_time < T_s:
-            time.sleep(T_s-delta_time)                  
+            update_sampling_time(T_s)
+            time.sleep(T_s-delta_time)     
+        elif not has_rotated: # rotate function has a sleep inside, which would interfere with time measures
+            #update sampling time if execution time too slow (happens if we are recording at the same time)
+            update_sampling_time(delta_time)     
 
 if __name__=="__main__":
     main()
